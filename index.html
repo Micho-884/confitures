@@ -1,0 +1,1303 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cellier à confitures</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Confitures">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f7f3f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1b1418" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Karla:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&family=Encode+Sans+Semi+Condensed:wght@400;600;700&display=swap">
+<style>
+/* Layout : une étagère. En-tête-étiquette, onglets Cellier / Carnet, lots en étiquettes de pots, recettes rangées par millésime. */
+:root {
+  --bg: #f7f3f5;
+  --paper: #fffcfd;
+  --ink: #2a1a24;
+  --muted: #76626d;
+  --line: #e4d8de;
+  --accent: #7a1f4a;      /* cassis */
+  --accent-ink: #ffffff;
+  --accent-soft: #f3e2ea;
+  --apricot: #d9822b;
+  --apricot-soft: #fbead6;
+  --ok: #3f7a4a;
+  --warn: #b5651d;
+  --danger: #a3262f;
+  --f-display: "Young Serif", Georgia, "Times New Roman", serif;
+  --f-body: "Karla", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1b1418; --paper: #251c21; --ink: #f2e8ed; --muted: #b29fa9; --line: #3d2f36;
+    --accent: #e07aa6; --accent-ink: #1b1418; --accent-soft: #3a2230;
+    --apricot: #f0a65c; --apricot-soft: #3b2a1b;
+    --ok: #7fc28a; --warn: #f0a65c; --danger: #f07a82;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1b1418; --paper: #251c21; --ink: #f2e8ed; --muted: #b29fa9; --line: #3d2f36;
+  --accent: #e07aa6; --accent-ink: #1b1418; --accent-soft: #3a2230;
+  --apricot: #f0a65c; --apricot-soft: #3b2a1b;
+  --ok: #7fc28a; --warn: #f0a65c; --danger: #f07a82;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--f-body); font-size: 16px; line-height: 1.5;
+}
+.wrap {
+  max-width: 1080px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+  display: grid; gap: 24px;
+}
+h1, h2, h3 { font-family: var(--f-display); font-weight: 400; text-wrap: balance; margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* En-tête */
+.head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px; }
+.head h1 { font-size: clamp(30px, 5vw, 44px); line-height: 1.05; }
+.head .kicker { font-family: var(--f-mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+.stats { display: flex; flex-wrap: wrap; gap: 20px 28px; }
+.stat { display: grid; }
+.stat b { font-family: var(--f-display); font-weight: 400; font-size: 28px; line-height: 1; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 13px; color: var(--muted); }
+
+/* Barre d'outils */
+.bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+.tabs { display: flex; gap: 4px; background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 4px; }
+.tab { border: 0; background: transparent; padding: 8px 18px; border-radius: 999px; font-weight: 500; color: var(--muted); }
+.tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
+.tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.search { border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 8px 14px; min-width: 0; width: 210px; max-width: 100%; }
+.btn { border: 1px solid var(--line); background: var(--paper); border-radius: 8px; padding: 8px 14px; font-weight: 500; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.small { padding: 5px 10px; font-size: 14px; }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.btn.ghost:hover { color: var(--accent); }
+.btn.danger { color: var(--danger); }
+.btn.danger.armed { background: var(--danger); color: var(--paper); border-color: var(--danger); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 4px 12px; font-family: var(--f-mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+/* Cellier : étiquettes de pots */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.label {
+  background: var(--paper); border: 1px solid var(--line); border-radius: var(--r);
+  padding: 16px; display: grid; gap: 12px; align-content: start; min-width: 0;
+  position: relative;
+}
+.label.empty-lot { opacity: .62; }
+.label .top { display: flex; justify-content: space-between; gap: 8px; align-items: start; }
+.label h3 { font-size: 20px; line-height: 1.2; overflow-wrap: anywhere; }
+.vintage {
+  font-family: var(--f-mono); font-size: 13px; letter-spacing: .06em;
+  border: 1px solid var(--accent); color: var(--accent); border-radius: 4px; padding: 1px 7px; white-space: nowrap;
+}
+.meta { font-size: 14px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.meta .mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.jars { display: flex; flex-wrap: wrap; gap: 4px; }
+.jar { width: 14px; height: 18px; border-radius: 3px 3px 5px 5px; border: 1.5px solid var(--accent); position: relative; }
+.jar::before { content: ""; position: absolute; left: 1px; right: 1px; top: -4px; height: 3px; border-radius: 1px; background: var(--muted); }
+.jar.full { background: var(--accent); }
+.jar.petit { width: 11px; height: 13px; }
+.jar.grand { width: 18px; height: 24px; }
+.jars { align-items: end; }
+.size-tag { font-family: var(--f-mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink); background: var(--apricot-soft); border-radius: 4px; padding: 1px 7px; }
+.sizes { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; font-size: 14px; color: var(--muted); margin-bottom: 16px; }
+.sizes b { color: var(--ink); font-family: var(--f-mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+.sizes .chip { font-family: var(--f-body); }
+.sizerows { display: grid; gap: 6px; }
+.srow { display: grid; grid-template-columns: 5.6em minmax(0, 1fr) auto auto; align-items: center; gap: 8px; }
+.srow .size-tag { text-align: center; }
+.srow .n { font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-size: 14px; }
+.srow .n b { font-size: 17px; font-weight: 500; }
+.srow .stepper button { width: 32px; height: 32px; }
+.potgrid { display: grid; grid-template-columns: 6em minmax(0, 1fr); gap: 6px 10px; align-items: center; }
+.potgrid.edit { grid-template-columns: 6em minmax(0, 1fr) minmax(0, 1fr); }
+.potgrid label { font-size: 14px; font-weight: 500; }
+.potgrid input { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--bg); width: 100%; min-width: 0; }
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) 6.5em; gap: 6px; }
+#f_prov { text-transform: uppercase; }
+.checks { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+.check { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; cursor: pointer; }
+.check input { accent-color: var(--accent); width: 16px; height: 16px; }
+.flabel { font-size: 13px; font-weight: 500; color: var(--muted); }
+.preview-wrap { display: grid; place-items: center; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 18px 12px; }
+#e_prev { box-shadow: 0 1px 5px rgba(0, 0, 0, .2); border-radius: 3px; max-width: 100%; }
+#e_prev.round { border-radius: 50%; }
+dialog.big { width: min(940px, calc(100vw - 32px)); }
+.contents { display: contents; }
+.stage-wrap { display: grid; place-items: center; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 16px 8px; overflow: hidden; }
+.stage { position: relative; box-shadow: 0 1px 5px rgba(0, 0, 0, .2); max-width: 100%; border-radius: 3px; overflow: hidden; }
+.stage.round { border-radius: 50%; }
+.stage canvas { display: block; width: 100%; height: 100%; }
+#t_boxes { position: absolute; inset: 0; touch-action: none; }
+.fbox { position: absolute; border: 1px dashed rgba(122, 31, 74, .55); border-radius: 2px; cursor: grab; touch-action: none; }
+.fbox.sel { border: 2px solid var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.fbox .h-w, .fbox .h-s { position: absolute; touch-action: none; background: var(--paper); border: 2px solid var(--accent); }
+.fbox .h-w { right: -9px; top: 50%; width: 16px; height: 16px; margin-top: -8px; border-radius: 50%; cursor: ew-resize; }
+.fbox .h-s { right: -9px; bottom: -9px; width: 16px; height: 16px; border-radius: 3px; cursor: nwse-resize; background: var(--accent); }
+.quick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.quick b { font-family: var(--f-mono); font-weight: 500; font-variant-numeric: tabular-nums; min-width: 4.2em; text-align: center; }
+.quick .flabel:not(:first-child) { margin-left: 10px; }
+.addrow { display: flex; gap: 8px; flex-wrap: wrap; }
+.addrow select { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; background: var(--bg); }
+.props { border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+input[type="color"] { height: 38px; padding: 2px 4px; }
+.count { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.count .n { font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-size: 15px; }
+.count .n b { font-size: 20px; font-weight: 500; }
+.stepper { display: flex; gap: 6px; }
+.stepper button { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: var(--bg); font-size: 18px; line-height: 1; }
+.stepper button:hover { border-color: var(--accent); color: var(--accent); }
+.pill { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; }
+.pill.low { background: var(--apricot-soft); color: var(--warn); }
+.pill.out { background: var(--line); color: var(--muted); }
+.pill.ex { background: var(--accent-soft); color: var(--accent); }
+.label .actions { display: flex; gap: 4px; flex-wrap: wrap; border-top: 1px dashed var(--line); padding-top: 8px; }
+
+/* Carnet de recettes */
+.year { display: grid; gap: 14px; }
+.year-head { display: flex; align-items: baseline; gap: 14px; }
+.year-head h2 { font-size: 34px; color: var(--accent); font-variant-numeric: tabular-nums; }
+.year-head span { color: var(--muted); font-size: 14px; }
+.year-head::after { content: ""; flex: 1; border-bottom: 1px solid var(--line); transform: translateY(-6px); }
+.recipes { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.recipe { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.recipe h3 { font-size: 22px; line-height: 1.2; overflow-wrap: anywhere; }
+.recipe .fruit { color: var(--muted); font-size: 14px; }
+.facts { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; border-block: 1px solid var(--line); padding-block: 10px; }
+.fact { display: grid; }
+.fact b { font-family: var(--f-mono); font-weight: 500; font-variant-numeric: tabular-nums; font-size: 16px; }
+.fact span { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.stars { color: var(--apricot); letter-spacing: 2px; font-size: 15px; }
+.versions { font-size: 13px; color: var(--muted); }
+.versions button { border: 0; background: none; padding: 0; color: var(--accent); text-decoration: underline; text-underline-offset: 2px; font-size: 13px; }
+details summary { cursor: pointer; font-weight: 500; color: var(--accent); }
+details .body { display: grid; gap: 10px; padding-top: 10px; }
+details h4 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+details ul, details ol { margin: 0; padding-left: 20px; }
+details p { margin: 0; }
+.recipe .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.recipe.flash { outline: 2px solid var(--apricot); }
+
+.empty { background: var(--paper); border: 1px dashed var(--line); border-radius: var(--r); padding: 32px 20px; text-align: center; color: var(--muted); display: grid; gap: 12px; justify-items: center; }
+.empty h3 { color: var(--ink); font-size: 22px; }
+.notice { background: var(--apricot-soft); color: var(--ink); border-radius: 8px; padding: 10px 14px; font-size: 14px; }
+
+/* Dialogue */
+dialog { border: 1px solid var(--line); border-radius: 14px; padding: 0; background: var(--paper); color: var(--ink); width: min(620px, calc(100vw - 32px)); max-height: calc(100dvh - 40px); }
+dialog::backdrop { background: rgba(20, 8, 15, .45); }
+dialog form { display: grid; gap: 14px; padding: 22px; }
+dialog h2 { font-size: 26px; }
+.fields { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
+.fields .wide { grid-column: 1 / -1; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field label { font-size: 13px; font-weight: 500; color: var(--muted); }
+.field input, .field select, .field textarea { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--bg); width: 100%; min-width: 0; }
+.field textarea { min-height: 88px; resize: vertical; }
+.hint { font-size: 12px; color: var(--muted); }
+.form-actions { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.form-actions .right { display: flex; gap: 8px; margin-left: auto; }
+.err { color: var(--danger); font-size: 14px; }
+
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 999px; font-size: 14px; z-index: 50; }
+
+@media (max-width: 520px) {
+  .fields { grid-template-columns: 1fr; }
+  .search { width: 100%; }
+  .tools { width: 100%; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .label, .recipe { transition: border-color .15s; }
+  .label:hover, .recipe:hover { border-color: var(--accent); }
+}
+
+/* Version iPhone */
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; }
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+[hidden] { display: none !important; }
+img { max-width: 100%; }
+input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Safari */
+.local-sheet { position: fixed; inset: 0; z-index: 1000; background: rgba(20, 8, 15, .45); display: grid; place-items: center; padding: max(16px, env(safe-area-inset-left, 0px)); }
+.local-card { background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: 14px; padding: 20px; width: min(420px, 100%); display: grid; gap: 12px; }
+.local-card h2 { font-size: 22px; }
+.local-card p { margin: 0; color: var(--muted); }
+.local-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+label.btn { display: inline-flex; align-items: center; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="head">
+    <div>
+      <div class="kicker">Confitures maison</div>
+      <h1>Cellier à confitures</h1>
+    </div>
+    <div class="stats" id="stats">
+      <div class="stat"><b id="sPots">–</b><span>pots en réserve</span></div>
+      <div class="stat"><b id="sParfums">–</b><span>parfums</span></div>
+      <div class="stat"><b id="sRecettes">–</b><span>recettes</span></div>
+      <div class="stat"><b id="sAnnees">–</b><span>millésimes</span></div>
+    </div>
+  </header>
+
+  <div id="notice" class="notice" hidden></div>
+
+  <div class="bar">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tab-cellier" aria-selected="true" data-view="cellier">Cellier</button>
+      <button class="tab" role="tab" id="tab-carnet" aria-selected="false" data-view="carnet">Carnet de recettes</button>
+    </div>
+    <div class="tools">
+      <input class="search" id="q" type="search" placeholder="Chercher un fruit, un parfum…" aria-label="Rechercher">
+      <button class="btn" id="exportBtn" hidden>Exporter en Excel</button>
+      <button class="btn primary" id="addBtn">+ Nouveau lot</button>
+    </div>
+  </div>
+
+  <div class="chips" id="years" aria-label="Filtrer par année"></div>
+
+  <main id="view"></main>
+</div>
+
+<dialog id="dlg"><form id="frm" novalidate></form></dialog>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="local-shim.js"></script>
+<script>
+(() => {
+  const THIS_YEAR = new Date().getFullYear();
+  const state = { view: "cellier", year: "all", taille: "all", q: "", recettes: [], lots: [], ready: { r: false, l: false } };
+  const TAILLES = [
+    { v: "petit", t: "Petit", pl: "Petits", g: 250 },
+    { v: "standard", t: "Standard", pl: "Standards", g: 370 },
+    { v: "grand", t: "Grand", pl: "Grands", g: 720 },
+  ];
+  // Taille d'un lot : le champ enregistré, sinon déduite de la contenance.
+  function tailleOf(l) {
+    if (TAILLES.some(t => t.v === l.taille)) return l.taille;
+    const c = num(l.contenance);
+    if (!c) return "standard";
+    return c <= 280 ? "petit" : (c <= 500 ? "standard" : "grand");
+  }
+  const tailleLabel = (v) => (TAILLES.find(t => t.v === v) || TAILLES[1]).t;
+  // Pots d'un lot par taille : { petit: {n: remplis, r: restants}, standard: {...}, grand: {...} }.
+  // Les anciens lots (une seule taille) sont convertis à la volée.
+  function potsOf(l) {
+    const out = {}; TAILLES.forEach(t => { out[t.v] = { n: 0, r: 0 }; });
+    if (l.pots && typeof l.pots === "object") {
+      TAILLES.forEach(t => { const p = l.pots[t.v] || {}; const r = Math.max(0, num(p.r)); out[t.v] = { n: Math.max(r, num(p.n)), r }; });
+    } else {
+      const r = Math.max(0, num(l.restants)); out[tailleOf(l)] = { n: Math.max(r, num(l.nbPots)), r };
+    }
+    return out;
+  }
+  const lotTitle = (l) => (l.numero ? `${l.numero} - ` : "") + (l.nom || "Sans nom");
+  function nextNumero() { return state.lots.reduce((m, l) => Math.max(m, num(l.numero)), 0) + 1; }
+  let db = null, canWrite = true;
+
+  const $ = (s, el = document) => el.querySelector(s);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
+  const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+
+  try { const v = localStorage.getItem("cellier.view"); if (v === "carnet" || v === "cellier") state.view = v; } catch (e) {}
+  if (location.hash === "#carnet") state.view = "carnet";
+  if (location.hash === "#cellier") state.view = "cellier";
+
+  function toast(msg) {
+    const t = $("#toast"); t.textContent = msg; t.hidden = false;
+    clearTimeout(toast._t); toast._t = setTimeout(() => { t.hidden = true; }, 2200);
+  }
+  function notice(msg) { const n = $("#notice"); n.textContent = msg; n.hidden = !msg; }
+
+  // ---------- Rendu ----------
+  function ratio(r) { const f = num(r.fruitsG), s = num(r.sucreG); return f > 0 && s > 0 ? Math.round(s / f * 100) : null; }
+  function stars(n) { n = Math.max(0, Math.min(5, num(n))); return n ? "★".repeat(n) + "☆".repeat(5 - n) : ""; }
+  function matches(obj, fields) {
+    if (!state.q) return true;
+    const q = norm(state.q);
+    return fields.some(f => norm(obj[f]).includes(q));
+  }
+
+  function renderStats() {
+    const pots = state.lots.reduce((a, l) => a + Math.max(0, num(l.restants)), 0);
+    const parfums = new Set(state.lots.filter(l => num(l.restants) > 0).map(l => norm(l.nom))).size;
+    const annees = new Set([...state.recettes.map(r => r.annee), ...state.lots.map(l => l.annee)].filter(Boolean));
+    $("#sPots").textContent = pots;
+    $("#sParfums").textContent = parfums;
+    $("#sRecettes").textContent = state.recettes.length;
+    $("#sAnnees").textContent = annees.size;
+  }
+
+  function renderYears() {
+    const src = state.view === "cellier" ? state.lots : state.recettes;
+    const years = [...new Set(src.map(x => num(x.annee)).filter(Boolean))].sort((a, b) => b - a);
+    if (state.year !== "all" && !years.includes(num(state.year))) state.year = "all";
+    const el = $("#years");
+    if (years.length < 2) { el.innerHTML = ""; return; }
+    el.innerHTML = [`<button class="chip" data-year="all" aria-pressed="${state.year === "all"}">Toutes</button>`]
+      .concat(years.map(y => `<button class="chip" data-year="${y}" aria-pressed="${String(state.year) === String(y)}">${y}</button>`)).join("");
+  }
+
+  function lotCard(l) {
+    const P = potsOf(l);
+    const n = TAILLES.reduce((a, t) => a + P[t.v].r, 0), total = TAILLES.reduce((a, t) => a + P[t.v].n, 0);
+    const used = TAILLES.filter(t => P[t.v].n > 0);
+    const rows = (used.length ? used : [TAILLES[1]]).map(t => {
+      const p = P[t.v], shown = Math.min(p.n, 12);
+      const jars = Array.from({ length: shown }, (_, i) => `<span class="jar ${t.v}${i < p.r ? " full" : ""}"></span>`).join("") + (p.n > shown ? `<span class="hint">+${p.n - shown}</span>` : "");
+      return `<div class="srow"><span class="size-tag">${t.t}</span><span class="jars" aria-hidden="true">${jars}</span>
+        <span class="n"><b>${p.r}</b>/${p.n}</span>
+        <span class="stepper"><button type="button" data-act="minus" data-size="${t.v}" aria-label="Retirer un pot ${t.t.toLowerCase()}" ${p.r === 0 || !canWrite ? "disabled" : ""}>−</button><button type="button" data-act="plus" data-size="${t.v}" aria-label="Ajouter un pot ${t.t.toLowerCase()}" ${!canWrite ? "disabled" : ""}>+</button></span></div>`;
+    }).join("");
+    const pill = n === 0 ? `<span class="pill out">Épuisé</span>` : (n <= 2 ? `<span class="pill low">Bientôt fini</span>` : "");
+    const rec = l.recetteId && state.recettes.find(r => r.id === l.recetteId);
+    const meta = [
+      l.date ? `<span>Mise en pot : ${esc(fmtDate(l.date))}</span>` : "",
+      l.provenance ? `<span>Fruits de ${esc(l.provenance)}</span>` : "",
+      l.emplacement ? `<span>${esc(l.emplacement)}</span>` : ""
+    ].filter(Boolean).join("");
+    return `<article class="label${n === 0 ? " empty-lot" : ""}" data-lot="${esc(l.id)}">
+      <div class="top"><h3>${esc(lotTitle(l))}</h3><span class="vintage">${esc(l.annee || "—")}</span></div>
+      ${meta ? `<div class="meta">${meta}</div>` : ""}
+      <div class="sizerows">${rows}</div>
+      <div class="count">
+        <span class="n">Total : <b>${n}</b> / ${total} pots ${pill} ${l.exemple ? `<span class="pill ex">Exemple</span>` : ""}</span>
+      </div>
+      ${l.notes ? `<div class="meta">${esc(l.notes)}</div>` : ""}
+      <div class="actions">
+        ${rec ? `<button class="btn ghost small" data-act="see-recipe" data-id="${esc(rec.id)}">Voir la recette</button>` : ""}
+        <button class="btn ghost small" data-act="labels">Étiquettes</button>
+        <button class="btn ghost small" data-act="edit-lot" ${!canWrite ? "disabled" : ""}>Modifier</button>
+      </div>
+    </article>`;
+  }
+
+  const MOIS = ["JANVIER", "FÉVRIER", "MARS", "AVRIL", "MAI", "JUIN", "JUILLET", "AOÛT", "SEPTEMBRE", "OCTOBRE", "NOVEMBRE", "DÉCEMBRE"];
+  function fmtDate(d) {
+    // Mois et année en majuscules : « OCTOBRE 2026 » (dates enregistrées en AAAA-MM ou AAAA-MM-JJ).
+    const m = /^(\d{4})-(\d{2})/.exec(d || ""); if (!m || +m[2] < 1 || +m[2] > 12) return d || "";
+    return `${MOIS[+m[2] - 1]} ${m[1]}`;
+  }
+
+  function renderCellier() {
+    const base = state.lots.filter(l => (state.year === "all" || String(l.annee) === String(state.year)) && matches(l, ["numero", "nom", "emplacement", "provenance", "notes"]));
+    let lots = base.filter(l => state.taille === "all" || potsOf(l)[state.taille].n > 0);
+    lots.sort((a, b) => (num(b.restants) > 0) - (num(a.restants) > 0) || num(b.annee) - num(a.annee) || String(a.nom).localeCompare(b.nom, "fr"));
+    if (!state.ready.l) return `<div class="empty"><h3>Ouverture du cellier…</h3><p>Vos lots de pots vont apparaître ici.</p></div>`;
+    if (!state.lots.length) return `<div class="empty"><h3>Le cellier est vide</h3><p>Ajoutez votre premier lot : le parfum, l'année et le nombre de pots remplis.</p><button class="btn primary" data-act="new-lot">+ Nouveau lot</button></div>`;
+    const parTaille = TAILLES.map(t => ({ ...t, n: base.reduce((a, l) => a + potsOf(l)[t.v].r, 0) }));
+    const sizes = `<div class="sizes" aria-label="Pots restants par taille">
+      <span>En réserve :</span>
+      ${parTaille.map(t => `<span><b>${t.n}</b> ${t.n > 1 ? t.pl.toLowerCase() : t.t.toLowerCase()}</span>`).join("")}
+      <span class="chips" style="margin-left:auto">
+        <button class="chip" data-taille="all" aria-pressed="${state.taille === "all"}">Toutes tailles</button>
+        ${TAILLES.map(t => `<button class="chip" data-taille="${t.v}" aria-pressed="${state.taille === t.v}">${t.pl}</button>`).join("")}
+      </span>
+    </div>`;
+    if (!lots.length) return sizes + `<div class="empty"><p>Aucun lot ne correspond à cette recherche.</p></div>`;
+    return sizes + `<div class="grid">${lots.map(lotCard).join("")}</div>`;
+  }
+
+  function recipeCard(r) {
+    const rt = ratio(r);
+    const others = state.recettes.filter(o => o.id !== r.id && norm(o.nom) === norm(r.nom)).sort((a, b) => num(b.annee) - num(a.annee));
+    const lines = (t) => String(t || "").split(/\n+/).map(s => s.trim()).filter(Boolean);
+    const ing = lines(r.ingredients);
+    const potsFaits = state.lots.filter(l => l.recetteId === r.id).reduce((a, l) => a + num(l.nbPots), 0);
+    return `<article class="recipe" id="r-${esc(r.id)}" data-recipe="${esc(r.id)}">
+      <div class="top" style="display:flex;justify-content:space-between;gap:8px;align-items:start">
+        <div><h3>${esc(r.nom || "Sans nom")}</h3>${r.fruits ? `<div class="fruit">${esc(r.fruits)}</div>` : ""}</div>
+        <span class="vintage">${esc(r.annee || "—")}</span>
+      </div>
+      <div class="facts">
+        <div class="fact"><b>${rt != null ? rt + " %" : "—"}</b><span>Sucre / fruit</span></div>
+        <div class="fact"><b>${r.cuisson ? esc(r.cuisson) + " min" : "—"}</b><span>Cuisson</span></div>
+        <div class="fact"><b>${r.rendement ? esc(r.rendement) : "—"}</b><span>Pots prévus</span></div>
+      </div>
+      ${r.note || r.exemple ? `<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">${r.note ? `<span class="stars" aria-label="${num(r.note)} sur 5">${stars(r.note)}</span>` : ""}${r.exemple ? `<span class="pill ex">Exemple</span>` : ""}</div>` : ""}
+      ${others.length ? `<div class="versions">Aussi faite en ${others.map(o => `<button data-act="goto" data-id="${esc(o.id)}">${esc(o.annee)}</button>`).join(", ")}</div>` : ""}
+      ${potsFaits ? `<div class="versions">${potsFaits} pots mis en cave avec cette recette</div>` : ""}
+      ${(ing.length || r.notes) ? `<details><summary>Ingrédients et notes</summary><div class="body">
+        ${ing.length ? `<h4>Ingrédients</h4><ul>${ing.map(i => `<li>${esc(i)}</li>`).join("")}</ul>` : ""}
+        ${r.notes ? `<h4>Notes de l'année</h4><p>${esc(r.notes)}</p>` : ""}
+      </div></details>` : ""}
+      <div class="actions">
+        <button class="btn small" data-act="edit-recipe" ${!canWrite ? "disabled" : ""}>Modifier</button>
+        ${num(r.annee) !== THIS_YEAR ? `<button class="btn small" data-act="redo" ${!canWrite ? "disabled" : ""}>Refaire en ${THIS_YEAR}</button>` : ""}
+        <button class="btn small" data-act="lot-from" ${!canWrite ? "disabled" : ""}>Mettre en pots</button>
+      </div>
+    </article>`;
+  }
+
+  function renderCarnet() {
+    if (!state.ready.r) return `<div class="empty"><h3>Ouverture du carnet…</h3><p>Vos recettes, rangées par année, vont apparaître ici.</p></div>`;
+    if (!state.recettes.length) return `<div class="empty"><h3>Le carnet est vide</h3><p>Notez votre première recette avec son année : vous pourrez la reprendre et l'ajuster les saisons suivantes.</p><button class="btn primary" data-act="new-recipe">+ Nouvelle recette</button></div>`;
+    const list = state.recettes.filter(r => (state.year === "all" || String(r.annee) === String(state.year)) && matches(r, ["nom", "fruits", "ingredients", "notes"]));
+    if (!list.length) return `<div class="empty"><p>Aucune recette ne correspond à cette recherche.</p></div>`;
+    const byYear = new Map();
+    list.forEach(r => { const y = num(r.annee) || 0; if (!byYear.has(y)) byYear.set(y, []); byYear.get(y).push(r); });
+    return [...byYear.keys()].sort((a, b) => b - a).map(y => {
+      const rs = byYear.get(y).sort((a, b) => String(a.nom).localeCompare(b.nom, "fr"));
+      return `<section class="year"><div class="year-head"><h2>${y || "Sans année"}</h2><span>${rs.length} recette${rs.length > 1 ? "s" : ""}</span></div>
+        <div class="recipes">${rs.map(recipeCard).join("")}</div></section>`;
+    }).join("");
+  }
+
+  function render() {
+    document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.view === state.view)));
+    $("#addBtn").textContent = state.view === "cellier" ? "+ Nouveau lot" : "+ Nouvelle recette";
+    $("#addBtn").disabled = !canWrite;
+    renderStats(); renderYears();
+    $("#view").innerHTML = state.view === "cellier" ? renderCellier() : `<div style="display:grid;gap:32px">${renderCarnet()}</div>`;
+  }
+
+  // ---------- Formulaires ----------
+  const dlg = $("#dlg"), frm = $("#frm");
+  let onSave = null;
+
+  function field(id, label, value, opts = {}) {
+    const v = esc(value ?? "");
+    const cls = opts.wide ? "field wide" : "field";
+    let input;
+    if (opts.type === "textarea") input = `<textarea id="${id}" name="${id}" placeholder="${esc(opts.ph || "")}">${v}</textarea>`;
+    else if (opts.type === "select") input = `<select id="${id}" name="${id}">${opts.options.map(o => `<option value="${esc(o.v)}" ${String(o.v) === String(value ?? "") ? "selected" : ""}>${esc(o.t)}</option>`).join("")}</select>`;
+    else input = `<input id="${id}" name="${id}" type="${opts.type || "text"}" value="${v}" ${opts.min != null ? `min="${opts.min}"` : ""} ${opts.max != null ? `max="${opts.max}"` : ""} ${opts.step ? `step="${opts.step}"` : ""} placeholder="${esc(opts.ph || "")}" ${opts.required ? "required" : ""}>`;
+    return `<div class="${cls}"><label for="${id}">${label}</label>${input}${opts.hint ? `<span class="hint">${opts.hint}</span>` : ""}</div>`;
+  }
+
+  function openForm(title, fieldsHtml, save, del, submitLabel = "Enregistrer") {
+    frm.oninput = null; frm.onchange = null;
+    dlg.classList.remove("big");
+    frm.innerHTML = `<h2>${esc(title)}</h2><div class="fields">${fieldsHtml}</div><div class="err" id="ferr" hidden></div>
+      <div class="form-actions">${del ? `<button type="button" class="btn danger" id="fdel">Supprimer</button>` : ""}
+      <div class="right"><button type="button" class="btn" id="fcancel">Annuler</button><button type="submit" class="btn primary" id="fsave">${esc(submitLabel)}</button></div></div>`;
+    onSave = save;
+    $("#fcancel", frm).onclick = () => dlg.close();
+    if (del) {
+      const b = $("#fdel", frm);
+      b.onclick = async () => {
+        if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = "Confirmer la suppression"; return; }
+        b.disabled = true;
+        try { await del(); dlg.close(); toast("Supprimé"); } catch (e) { showErr(e); b.disabled = false; }
+      };
+    }
+    if (!dlg.open) { if (typeof dlg.showModal === "function") dlg.showModal(); else dlg.setAttribute("open", ""); }
+    const first = frm.querySelector("input,select,textarea"); first && first.focus();
+  }
+  function showErr(e) {
+    const el = $("#ferr", frm); if (!el) return;
+    const code = e && e.code;
+    el.textContent = code === "quota_exceeded" ? "Le cellier est plein : supprimez d'anciens lots ou recettes avant d'en ajouter."
+      : code === "invalid_argument" ? "Vous n'avez pas le droit de modifier ce cellier."
+      : (e && e.message) || "L'enregistrement a échoué. Réessayez dans un instant.";
+    el.hidden = false;
+  }
+  frm.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const data = Object.fromEntries(new FormData(frm).entries());
+    const btn = $("#fsave", frm); btn.disabled = true;
+    try { const msg = await onSave(data); dlg.close(); toast(msg || "Enregistré"); }
+    catch (e) { showErr(e); btn.disabled = false; }
+  });
+
+  function recipeOptions() {
+    return [{ v: "", t: "— Aucune —" }].concat([...state.recettes].sort((a, b) => num(b.annee) - num(a.annee) || String(a.nom).localeCompare(b.nom, "fr")).map(r => ({ v: r.id, t: `${r.nom} (${r.annee})` })));
+  }
+
+  function lotForm(l = {}, preset = {}) {
+    const d = { annee: THIS_YEAR, date: new Date().toISOString().slice(0, 7), ...preset, ...l };
+    const isEdit = !!l.id;
+    const P0 = isEdit ? potsOf(l) : { petit: { n: 0, r: 0 }, standard: { n: num(preset.nbPots) || 6, r: 0 }, grand: { n: 0, r: 0 } };
+    const potGrid = `<div class="field wide"><span class="flabel">Nombre de pots</span>
+      <div class="potgrid${isEdit ? " edit" : ""}">
+        <span></span><span class="flabel">Remplis</span>${isEdit ? `<span class="flabel">Restants</span>` : ""}
+        ${TAILLES.map(t => `<label for="f_n_${t.v}">${t.t}</label>
+          <input id="f_n_${t.v}" name="f_n_${t.v}" type="number" min="0" value="${P0[t.v].n}">
+          ${isEdit ? `<input id="f_r_${t.v}" name="f_r_${t.v}" type="number" min="0" value="${P0[t.v].r}" aria-label="${t.t} : pots restants">` : ""}`).join("")}
+      </div><span class="hint" id="f_tot"></span></div>`;
+    if (!isEdit && !d.numero) d.numero = nextNumero();
+    openForm(isEdit ? "Modifier le lot" : "Nouveau lot de pots", [
+      field("f_num", "N° de lot", d.numero, { type: "number", min: 1, hint: isEdit ? "" : "Proposé automatiquement." }),
+      field("f_nom", "Parfum", d.nom, { required: true, ph: "Abricot-lavande" }),
+      field("f_annee", "Année", d.annee, { type: "number", min: 1950, max: 2100 }),
+      (() => {
+        const dm = /^(\d{4})-(\d{2})/.exec(d.date || "");
+        const mo = dm ? dm[2] : "", an = dm ? dm[1] : "";
+        return `<div class="field"><label for="f_mois">Mise en pot</label><div class="pair">
+          <select id="f_mois" name="f_mois" aria-label="Mois de mise en pot"><option value="">—</option>${MOIS.map((n, i) => { const v = String(i + 1).padStart(2, "0"); return `<option value="${v}" ${v === mo ? "selected" : ""}>${n}</option>`; }).join("")}</select>
+          <input id="f_dan" name="f_dan" type="number" min="1950" max="2100" value="${esc(an)}" aria-label="Année de mise en pot"></div></div>`;
+      })(),
+      potGrid,
+      field("f_empl", "Rangement", d.emplacement, { ph: "Cave, étagère du haut" }),
+      field("f_prov", "Provenance des fruits", d.provenance, { ph: "PARIS" }),
+      field("f_rec", "Recette", d.recetteId, { type: "select", options: recipeOptions(), wide: true }),
+      field("f_notes", "Notes", d.notes, { type: "textarea", wide: true, ph: "Un peu liquide, à offrir à Noël…" }),
+    ].join(""), async (f) => {
+      if (!f.f_nom.trim()) throw { message: "Indiquez le parfum." };
+      const numero = Math.round(num(f.f_num)) || null;
+      const pris = numero && state.lots.find(o => o.id !== l.id && num(o.numero) === numero);
+      if (pris) throw { message: `Le n° ${numero} est déjà pris par « ${pris.nom} ». Choisissez-en un autre.` };
+      const body = {
+        numero, nom: f.f_nom.trim(), annee: num(f.f_annee) || THIS_YEAR, date: f.f_mois && num(f.f_dan) ? `${Math.round(num(f.f_dan))}-${f.f_mois}` : "",
+        provenance: (f.f_prov || "").trim().toUpperCase(),
+        emplacement: f.f_empl.trim(), recetteId: f.f_rec || "", notes: f.f_notes.trim(),
+        exemple: false, modifie: new Date().toISOString()
+      };
+      body.pots = {};
+      TAILLES.forEach(t => {
+        let n = Math.max(0, Math.round(num(f["f_n_" + t.v])));
+        const r = isEdit ? Math.max(0, Math.round(num(f["f_r_" + t.v]))) : n;
+        if (r > n) n = r;
+        body.pots[t.v] = { n, r };
+      });
+      body.nbPots = TAILLES.reduce((a, t) => a + body.pots[t.v].n, 0);
+      body.restants = TAILLES.reduce((a, t) => a + body.pots[t.v].r, 0);
+      if (isEdit) await db.collection("lots").doc(l.id).set(body);
+      else await db.collection("lots").add(body);
+      return isEdit ? "Lot mis à jour" : "Lot ajouté au cellier";
+    }, isEdit ? () => db.collection("lots").doc(l.id).delete() : null);
+    const tot = () => {
+      const n = TAILLES.reduce((a, t) => a + Math.max(0, num((gf("f_n_" + t.v) || {}).value)), 0);
+      const r = isEdit ? TAILLES.reduce((a, t) => a + Math.max(0, num((gf("f_r_" + t.v) || {}).value)), 0) : n;
+      gf("f_tot").textContent = isEdit ? `Total : ${r} restants sur ${n} pots remplis.` : `Total : ${n} pot${n > 1 ? "s" : ""}.`;
+    };
+    frm.oninput = tot; tot();
+  }
+
+  function recipeForm(r = {}, opts = {}) {
+    const isEdit = !!r.id && !opts.copy;
+    const d = { annee: THIS_YEAR, ...r };
+    if (opts.copy) { d.annee = THIS_YEAR; d.note = ""; d.notes = ""; }
+    openForm(isEdit ? "Modifier la recette" : (opts.copy ? `Refaire en ${THIS_YEAR}` : "Nouvelle recette"), [
+      field("r_nom", "Nom", d.nom, { required: true, ph: "Fraise-rhubarbe" }),
+      field("r_annee", "Année", d.annee, { type: "number", min: 1950, max: 2100 }),
+      field("r_fruits", "Fruits et provenance", d.fruits, { wide: true, ph: "Abricots du Valais, bien mûrs" }),
+      field("r_fg", "Fruits préparés (g)", d.fruitsG, { type: "number", min: 0, step: 10, hint: "Poids après dénoyautage." }),
+      field("r_sg", "Sucre (g)", d.sucreG, { type: "number", min: 0, step: 10, hint: "Le taux sucre / fruit se calcule seul." }),
+      field("r_cuis", "Durée de cuisson (min)", d.cuisson, { type: "number", min: 0 }),
+      field("r_rend", "Pots prévus", d.rendement, { type: "number", min: 0 }),
+      field("r_ing", "Ingrédients (un par ligne)", d.ingredients, { type: "textarea", wide: true }),
+      field("r_notes", "Notes de l'année", d.notes, { type: "textarea", wide: true, ph: "Moins de sucre que l'an dernier, prise parfaite." }),
+      field("r_note", "Appréciation", d.note || "", { type: "select", options: [{ v: "", t: "—" }, 1, 2, 3, 4, 5].map(o => typeof o === "object" ? o : { v: o, t: "★".repeat(o) }) }),
+    ].join(""), async (f) => {
+      if (!f.r_nom.trim()) throw { message: "Indiquez le nom de la recette." };
+      const body = {
+        nom: f.r_nom.trim(), annee: num(f.r_annee) || THIS_YEAR, fruits: f.r_fruits.trim(),
+        fruitsG: num(f.r_fg) || null, sucreG: num(f.r_sg) || null, cuisson: num(f.r_cuis) || null, rendement: num(f.r_rend) || null,
+        ingredients: f.r_ing.trim(), etapes: (isEdit && r.etapes) || "", notes: f.r_notes.trim(), note: num(f.r_note) || null,
+        exemple: false, modifie: new Date().toISOString()
+      };
+      if (isEdit) await db.collection("recettes").doc(r.id).set(body);
+      else { const ref = await db.collection("recettes").add(body); state.year = "all"; flashId = ref.id; }
+      return isEdit ? "Recette mise à jour" : `Recette ${body.annee} ajoutée au carnet`;
+    }, isEdit ? () => db.collection("recettes").doc(r.id).delete() : null);
+  }
+
+  let flashId = null;
+
+  // ---------- Événements ----------
+  document.addEventListener("click", async (ev) => {
+    const tab = ev.target.closest(".tab");
+    if (tab) { state.view = tab.dataset.view; state.year = "all"; try { localStorage.setItem("cellier.view", state.view); } catch (e) {} render(); return; }
+    const chip = ev.target.closest(".chip");
+    if (chip && chip.dataset.taille) { state.taille = chip.dataset.taille; render(); return; }
+    if (chip && chip.dataset.year) { state.year = chip.dataset.year; render(); return; }
+    if (ev.target.closest("#addBtn")) { if (!db) return; state.view === "cellier" ? lotForm() : recipeForm(); return; }
+
+    const b = ev.target.closest("[data-act]"); if (!b) return;
+    const act = b.dataset.act;
+    const lotEl = b.closest("[data-lot]"), recEl = b.closest("[data-recipe]");
+    const lot = lotEl && state.lots.find(l => l.id === lotEl.dataset.lot);
+    const rec = recEl && state.recettes.find(r => r.id === recEl.dataset.recipe);
+
+    if (act === "new-lot" && db) return lotForm();
+    if (act === "new-recipe" && db) return recipeForm();
+    if (act === "edit-lot" && lot) return lotForm(lot);
+    if (act === "labels" && lot) return labelForm(lot);
+    if (act === "edit-recipe" && rec) return recipeForm(rec);
+    if (act === "redo" && rec) return recipeForm(rec, { copy: true });
+    if (act === "lot-from" && rec) return lotForm({}, { nom: rec.nom, annee: num(rec.annee) || THIS_YEAR, recetteId: rec.id, nbPots: num(rec.rendement) || 6, provenance: "" });
+    if ((act === "see-recipe" || act === "goto")) { goToRecipe(b.dataset.id); return; }
+    if ((act === "minus" || act === "plus") && lot && db) {
+      const size = TAILLES.some(t => t.v === b.dataset.size) ? b.dataset.size : "standard";
+      const pots = potsOf(lot), p = pots[size];
+      p.r = Math.max(0, p.r + (act === "plus" ? 1 : -1));
+      if (p.r > p.n) p.n = p.r;
+      const patch = { pots, nbPots: TAILLES.reduce((a, t) => a + pots[t.v].n, 0), restants: TAILLES.reduce((a, t) => a + pots[t.v].r, 0) };
+      b.disabled = true;
+      const lbl = tailleLabel(size).toLowerCase();
+      try { await db.collection("lots").doc(lot.id).update(patch); toast(act === "minus" ? `Un pot ${lbl} de ${lot.nom} en moins` : `Un pot ${lbl} de ${lot.nom} en plus`); }
+      catch (e) { toast("La modification n'a pas été enregistrée."); b.disabled = false; }
+    }
+  });
+
+  function goToRecipe(id) {
+    state.view = "carnet"; state.year = "all"; state.q = ""; $("#q").value = ""; render();
+    const el = document.getElementById("r-" + id);
+    if (el) { el.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 1600); }
+  }
+
+  // ---------- Export Excel ----------
+  let downloads = null, assets = null;
+  function toDate(s) { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ""); return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])) : (s || ""); }
+  function sheet(rows, widths) {
+    const ws = XLSX.utils.json_to_sheet(rows, { cellDates: true });
+    ws["!cols"] = widths.map(w => ({ wch: w }));
+    if (rows.length) ws["!autofilter"] = { ref: ws["!ref"] };
+    return ws;
+  }
+  function buildWorkbook() {
+    const recById = new Map(state.recettes.map(r => [r.id, r]));
+    const lots = [...state.lots].sort((a, b) => num(b.annee) - num(a.annee) || String(a.nom).localeCompare(b.nom, "fr"));
+    const stock = lots.map(l => {
+      const r = recById.get(l.recetteId), P = potsOf(l);
+      const parTaille = {};
+      TAILLES.forEach(t => { parTaille[`${t.pl} remplis`] = P[t.v].n; parTaille[`${t.pl} restants`] = P[t.v].r; });
+      return {
+        "N° de lot": num(l.numero) || "", "Parfum": l.nom || "", "Année": num(l.annee) || "", ...parTaille,
+        "Total remplis": TAILLES.reduce((a, t) => a + P[t.v].n, 0), "Total restants": TAILLES.reduce((a, t) => a + P[t.v].r, 0),
+        "Mise en pot": fmtDate(l.date), "Rangement": l.emplacement || "", "Provenance des fruits": l.provenance || "",
+        "Recette": r ? `${r.nom} (${r.annee})` : "", "Notes": l.notes || "", "Exemple": l.exemple ? "oui" : ""
+      };
+    });
+    const recs = [...state.recettes].sort((a, b) => num(b.annee) - num(a.annee) || String(a.nom).localeCompare(b.nom, "fr")).map(r => ({
+      "Nom": r.nom || "", "Année": num(r.annee) || "", "Fruits": r.fruits || "",
+      "Fruits (g)": num(r.fruitsG) || "", "Sucre (g)": num(r.sucreG) || "", "Sucre / fruit (%)": ratio(r) ?? "",
+      "Durée de cuisson (min)": num(r.cuisson) || "", "Pots prévus": num(r.rendement) || "", "Appréciation (/5)": num(r.note) || "",
+      "Ingrédients": r.ingredients || "", "Notes de l'année": r.notes || "", "Exemple": r.exemple ? "oui" : ""
+    }));
+    const resume = TAILLES.map(t => {
+      const ls = state.lots.filter(l => potsOf(l)[t.v].n > 0);
+      return { "Taille": t.t, "Lots": ls.length, "Pots restants": ls.reduce((a, l) => a + potsOf(l)[t.v].r, 0) };
+    });
+    resume.push({ "Taille": "Total", "Lots": state.lots.length, "Pots restants": resume.reduce((a, r) => a + r["Pots restants"], 0) });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, sheet(stock, [9, 24, 7, 14, 15, 16, 17, 14, 15, 13, 14, 16, 24, 20, 28, 36, 8]), "Stock");
+    XLSX.utils.book_append_sheet(wb, sheet(recs, [24, 7, 28, 10, 10, 15, 13, 11, 16, 44, 40, 8]), "Recettes");
+    XLSX.utils.book_append_sheet(wb, sheet(resume, [12, 8, 14]), "Résumé");
+    return XLSX.write(wb, { type: "array", bookType: "xlsx" });
+  }
+  $("#exportBtn").addEventListener("click", async () => {
+    const b = $("#exportBtn");
+    if (!downloads || !window.XLSX) return;
+    b.disabled = true;
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      await downloads.save({ filename: `Cellier-confitures-${today}.xlsx`, data: buildWorkbook() });
+      toast("Fichier Excel enregistré");
+    } catch (e) {
+      const c = e && e.code;
+      if (c === "declined") {}
+      else if (c === "rate_limited") toast("Une demande d'enregistrement est déjà ouverte.");
+      else if (c === "extension_not_enabled") toast("L'export Excel n'est pas disponible dans cet affichage.");
+      else toast("L'export n'a pas abouti. Réessayez dans un instant.");
+    } finally { b.disabled = false; }
+  });
+  (async () => {
+    if (!window.claude || typeof window.claude.use !== "function") return;
+    try { downloads = await window.claude.use("downloads"); } catch (e) { downloads = null; }
+    $("#exportBtn").hidden = !(downloads && window.XLSX);
+  })();
+
+  // ---------- Étiquettes ----------
+  // Planches A4 courantes (mm). Les marges peuvent varier selon la marque : décalage réglable dans le modèle.
+  const FORMATS = [
+    { id: "a4-70x40", t: "A4 · 21 étiquettes 70 × 40 mm", w: 70, h: 40, cols: 3, rows: 7, left: 0, top: 8.5, gx: 0, gy: 0 },
+    { id: "a4-105x60", t: "A4 · 8 étiquettes 105 × 60 mm", w: 105, h: 60, cols: 2, rows: 4, left: 0, top: 28.5, gx: 0, gy: 0 },
+    { id: "a4-21", t: "A4 · 21 étiquettes 63,5 × 38,1 mm", w: 63.5, h: 38.1, cols: 3, rows: 7, left: 7.25, top: 15.15, gx: 2.5, gy: 0 },
+    { id: "a4-24", t: "A4 · 24 étiquettes 70 × 37 mm", w: 70, h: 37, cols: 3, rows: 8, left: 0, top: 0.5, gx: 0, gy: 0 },
+    { id: "a4-10", t: "A4 · 10 étiquettes 99,1 × 57 mm", w: 99.1, h: 57, cols: 2, rows: 5, left: 4.65, top: 6, gx: 2.5, gy: 0 },
+    { id: "a4-r40", t: "A4 · 24 étiquettes rondes Ø 40 mm", w: 40, h: 40, cols: 4, rows: 6, left: 16, top: 13.5, gx: 6, gy: 6, round: true },
+    { id: "a4-r60", t: "A4 · 12 étiquettes rondes Ø 60 mm", w: 60, h: 60, cols: 3, rows: 4, left: 10, top: 16.5, gx: 5, gy: 8, round: true },
+  ];
+  const COULEURS = [
+    { v: "cassis", t: "Cassis", rgb: [122, 31, 74] },
+    { v: "abricot", t: "Abricot", rgb: [190, 98, 20] },
+    { v: "olive", t: "Olive", rgb: [79, 104, 46] },
+    { v: "encre", t: "Encre", rgb: [35, 30, 33] },
+  ];
+  const MODELE_DEF = { format: "a4-70x40", police: "elegante", couleur: "cassis", cadre: true, coupe: false,
+    annee: true, date: true, cont: true, taille: false, fruits: true, prov: true, sucre: false, ing: false, notes: false,
+    mention: "Fait maison", dx: 0, dy: 0 };
+  state.modele = { ...MODELE_DEF };
+  state.modeles = [];
+  const INK = [40, 26, 36], INK2 = [95, 82, 90];
+  // Police des étiquettes : Avenir Next Condensed quand l'appareil l'a (Mac, iPhone, iPad), sinon une police proche.
+  const LABEL_CSS = '"Avenir Next Condensed", "AvenirNextCondensed-Regular", "Encode Sans Semi Condensed", "Arial Narrow", sans-serif';
+  function hasLocalFont(name) {
+    try {
+      const c = document.createElement("canvas").getContext("2d"), s = "Abricot-lavande 2026";
+      c.font = "40px monospace"; const a = c.measureText(s).width;
+      c.font = `40px "${name}", monospace`; return c.measureText(s).width !== a;
+    } catch (e) { return false; }
+  }
+  const HAS_AVENIR = hasLocalFont("Avenir Next Condensed");
+  const FONT_NOTE = HAS_AVENIR ? " Police : Avenir Next Condensed."
+    : " Avenir Next Condensed n'est pas installée sur cet appareil : une police proche la remplace. Créez le PDF depuis un Mac, un iPhone ou un iPad pour avoir la vraie police.";
+  function loadLabelFonts() {
+    if (!document.fonts || !document.fonts.load) return Promise.resolve();
+    return Promise.all(["400", "600", "700"].map(w => document.fonts.load(`${w} 20px "Encode Sans Semi Condensed"`).catch(() => {}))).catch(() => {});
+  }
+  const FAM = { serif: { pdf: "times", css: '"Times New Roman", Times, serif' }, sans: { pdf: "helvetica", css: "Helvetica, Arial, sans-serif" } };
+
+  function pdfPainter(doc) {
+    const setF = (o) => { doc.setFont(FAM[o.fam].pdf, o.bold ? (o.italic ? "bolditalic" : "bold") : (o.italic ? "italic" : "normal")); doc.setFontSize(o.size / 0.3528); };
+    return {
+      width(str, o) { setF(o); return doc.getTextWidth(str); },
+      text(str, x, y, o) { setF(o); doc.setTextColor(o.rgb[0], o.rgb[1], o.rgb[2]); doc.text(str, x, y, { align: o.align || "center" }); },
+      image(e, x, y, w, h) {
+        const key = e.key + "_" + w + "x" + h;
+        if (!e.pdf[key]) {
+          const c = document.createElement("canvas"); c.width = Math.round(w * 12); c.height = Math.round(h * 12);
+          const cx = c.getContext("2d"); cx.fillStyle = "#ffffff"; cx.fillRect(0, 0, c.width, c.height);
+          const r = coverRect(e.img, w, h); cx.drawImage(e.img, r[0], r[1], r[2], r[3], 0, 0, c.width, c.height);
+          e.pdf[key] = c.toDataURL("image/jpeg", 0.92);
+        }
+        doc.addImage(e.pdf[key], "JPEG", x, y, w, h, key.replace(/[^A-Za-z0-9_]/g, "_"), "FAST");
+      },
+      frame(x, y, w, h, round, rgb, lw, dash) {
+        doc.setDrawColor(rgb[0], rgb[1], rgb[2]); doc.setLineWidth(lw);
+        if (dash) doc.setLineDashPattern([1.2, 1.2], 0);
+        if (round) doc.circle(x + w / 2, y + h / 2, w / 2, "S");
+        else { const r = Math.min(w, h) * 0.08; doc.roundedRect(x, y, w, h, r, r, "S"); }
+        if (dash) doc.setLineDashPattern([], 0);
+      }
+    };
+  }
+  function canvasPainter(ctx, k) {
+    const setF = (o) => { ctx.font = `${o.italic ? "italic " : ""}${o.bold ? "bold " : ""}${o.size * k}px ${LABEL_CSS}`; };
+    return {
+      width(str, o) { setF(o); return ctx.measureText(str).width / k; },
+      text(str, x, y, o) { setF(o); ctx.fillStyle = `rgb(${o.rgb.join(",")})`; ctx.textAlign = o.align || "center"; ctx.textBaseline = "alphabetic"; ctx.fillText(str, x * k, y * k); },
+      image(e, x, y, w, h) { const r = coverRect(e.img, w, h); ctx.drawImage(e.img, r[0], r[1], r[2], r[3], x * k, y * k, w * k, h * k); },
+      frame(x, y, w, h, round, rgb, lw, dash) {
+        ctx.save(); ctx.strokeStyle = `rgb(${rgb.join(",")})`; ctx.lineWidth = lw * k;
+        if (dash) ctx.setLineDash([1.2 * k, 1.2 * k]);
+        ctx.beginPath();
+        if (round) ctx.arc((x + w / 2) * k, (y + h / 2) * k, (w / 2) * k, 0, Math.PI * 2);
+        else { const r = Math.min(w, h) * 0.08; if (ctx.roundRect) ctx.roundRect(x * k, y * k, w * k, h * k, r * k); else ctx.rect(x * k, y * k, w * k, h * k); }
+        ctx.stroke(); ctx.restore();
+      }
+    };
+  }
+  // Coupe un texte en deux lignes, à l'espace ou au trait d'union le plus proche du milieu.
+  function splitTwo(text) {
+    const s = String(text).trim(), mid = s.length / 2; let best = -1, keep = false;
+    for (let i = 1; i < s.length - 1; i++) {
+      const isSp = s[i] === " ", isHy = s[i] === "-";
+      if ((isSp || isHy) && (best < 0 || Math.abs(i - mid) < Math.abs(best - mid))) { best = i; keep = isHy; }
+    }
+    if (best < 0) return [s];
+    return [s.slice(0, keep ? best + 1 : best).trim(), s.slice(best + 1).trim()].filter(Boolean);
+  }
+  function wrap(P, text, o, maxW, maxLines) {
+    // Coupe aux espaces et après les traits d'union (Abricot- / lavande).
+    const toks = [];
+    String(text).split(/\s+/).filter(Boolean).forEach(w => w.replace(/-/g, "-\u0000").split("\u0000").filter(Boolean).forEach((p, i) => toks.push({ s: p, sp: i === 0 })));
+    const lines = []; let cur = "";
+    for (const tk of toks) { const t = cur ? cur + (tk.sp ? " " : "") + tk.s : tk.s; if (!cur || P.width(t, o) <= maxW) cur = t; else { lines.push(cur); cur = tk.s; } }
+    if (cur) lines.push(cur);
+    const overflow = lines.some(l => P.width(l, o) > maxW);
+    if (lines.length > maxLines) {
+      const kept = lines.slice(0, maxLines); let last = kept[maxLines - 1];
+      while (last.length > 1 && P.width(last + "…", o) > maxW) last = last.slice(0, -1);
+      kept[maxLines - 1] = last.trim() + "…";
+      return { lines: kept, overflow };
+    }
+    return { lines, overflow };
+  }
+  function labelItems(lot, rec, m) {
+    const fam = m.police === "moderne" ? "sans" : "serif";
+    const acc = (COULEURS.find(c => c.v === m.couleur) || COULEURS[0]).rgb;
+    const it = [{ t: lotTitle(lot), size: 1, fam, bold: true, rgb: acc, max: 2 }];
+    if (m.annee && lot.annee) it.push({ t: String(lot.annee), size: 0.62, fam, italic: fam === "serif", rgb: acc, max: 1 });
+    const small = (t, max, extra) => { if (t) it.push({ t, size: 0.42, fam: "sans", rgb: INK2, max, ...(extra || {}) }); };
+    if (m.fruits && rec && rec.fruits) small(rec.fruits, 2, { rgb: INK });
+    if (m.prov && lot.provenance) small(lot.provenance, 1, { rgb: INK });
+    if (m.date && lot.date) small(fmtDate(lot.date), 1);
+    small(m.taille ? `pot ${tailleLabel(tailleOf(lot)).toLowerCase()}` : "", 1);
+    if (m.sucre && rec) { const r = ratio(rec); if (r != null) small(`${r} g de sucre pour 100 g de fruits`, 2); }
+    if (m.ing && rec && rec.ingredients) small(String(rec.ingredients).split(/\n+/).map(s => s.trim()).filter(Boolean).join(", "), 4);
+    if (m.notes && lot.notes) small(lot.notes, 2);
+    if (m.mention && m.mention.trim()) it.push({ t: m.mention.trim(), size: 0.42, fam, italic: true, rgb: acc, max: 1, gapBefore: 0.6 });
+    return it;
+  }
+  function drawLabel(P, x, y, f, lot, rec, m) {
+    const w = f.w, h = f.h, round = !!f.round;
+    const acc = (COULEURS.find(c => c.v === m.couleur) || COULEURS[0]).rgb;
+    if (m.cadre) { const ins = Math.min(w, h) * 0.05; P.frame(x + ins, y + ins, w - 2 * ins, h - 2 * ins, round, acc, 0.35); }
+    const iw = round ? w * 0.7 : w - Math.min(w, h) * 0.22;
+    const ih = round ? h * 0.7 : h - Math.min(w, h) * 0.2;
+    const items = labelItems(lot, rec, m);
+    let base = ih * 0.26, laid = [], total = 0;
+    for (let s = 0; s < 16; s++) {
+      laid = items.map(i => { const o = { ...i, size: i.size * base }; const wr = wrap(P, i.t, o, iw, i.max); return { o, lines: wr.lines, overflow: wr.overflow, gap: (i.gapBefore || 0) * o.size }; });
+      total = laid.reduce((a, l) => a + l.gap + l.lines.length * l.o.size * 1.18, 0);
+      if (total <= ih && !laid.some(l => l.overflow)) break;
+      base *= 0.9;
+    }
+    let cy = y + (h - total) / 2; const cx = x + w / 2;
+    for (const l of laid) { cy += l.gap; for (const line of l.lines) { cy += l.o.size * 1.18; P.text(line, cx, cy - l.o.size * 0.28, l.o); } }
+  }
+
+  // ---------- Modèles importés ----------
+  const FIELD_DEFS = [
+    { k: "numero", t: "N° de lot" }, { k: "nom", t: "Parfum" },
+    { k: "annee", t: "Année" }, { k: "date", t: "Date de mise en pot" }, { k: "provenance", t: "Provenance des fruits" },
+    { k: "contenance", t: "Contenance (ancien)", hidden: true }, { k: "taille", t: "Taille du pot" }, { k: "fruits", t: "Fruits et provenance" },
+    { k: "sucre", t: "Taux de sucre" }, { k: "ingredients", t: "Ingrédients" },
+    { k: "notes", t: "Notes du lot" }, { k: "texte", t: "Texte libre" },
+    { k: "titre", t: "N° et parfum ensemble (ancien)", hidden: true },
+  ];
+  const fieldLabel = (k) => (FIELD_DEFS.find(d => d.k === k) || { t: k }).t;
+  const MM_PT = 0.3528;
+  const gf = (id) => frm.querySelector("#" + id);
+  const checkbox = (id, label, on) => `<label class="check"><input type="checkbox" id="${id}" name="${id}" ${on ? "checked" : ""}> ${label}</label>`;
+  const fmtById = (id) => FORMATS.find(x => x.id === id) || FORMATS[0];
+  const fmtMm = (v) => String(v).replace(".", ",");
+  function hexRgb(h) { const m = /^#?([0-9a-f]{6})$/i.exec(h || ""); if (!m) return INK; const n = parseInt(m[1], 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+  function fieldValue(c, lot, rec) {
+    let v = "";
+    switch (c.k) {
+      case "titre": v = lotTitle(lot); break;
+      case "numero": v = lot.numero ? String(lot.numero) : ""; break;
+      case "nom": v = lot.nom || ""; break;
+      case "annee": v = lot.annee ? String(lot.annee) : ""; break;
+      case "date": v = lot.date ? fmtDate(lot.date) : ""; break;
+      case "contenance": v = lot.contenance ? `${lot.contenance} g` : ""; break;
+      case "taille": v = tailleLabel(tailleOf(lot)); break;
+      case "fruits": v = (rec && rec.fruits) || ""; break;
+      case "sucre": { const r = rec ? ratio(rec) : null; v = r ? `${r} g de sucre pour 100 g de fruits` : ""; break; }
+      case "ingredients": v = rec && rec.ingredients ? String(rec.ingredients).split(/\n+/).map(s => s.trim()).filter(Boolean).join(", ") : ""; break;
+      case "notes": v = lot.notes || ""; break;
+      case "provenance": v = lot.provenance || ""; break;
+      case "texte": return String(c.texte || "").trim();
+    }
+    return v ? (c.avant || "") + v : "";
+  }
+
+  const imgCache = new Map();
+  let entrySeq = 0;
+  function makeEntry(src) {
+    const e = { img: new Image(), ready: false, error: false, wait: new Set(), pdf: {}, key: "i" + (++entrySeq) };
+    const done = () => { e.wait.forEach(fn => { try { fn(); } catch (x) {} }); e.wait.clear(); };
+    e.img.onload = () => { e.ready = true; done(); };
+    e.img.onerror = () => { e.error = true; done(); };
+    e.img.src = src;
+    return e;
+  }
+  function getImg(id) { if (!imgCache.has(id)) imgCache.set(id, makeEntry(window.__assetUrl ? window.__assetUrl(id) : "/_blob/" + id)); return imgCache.get(id); }
+  function imgReady(e) { return (e.ready || e.error) ? Promise.resolve() : new Promise(r => e.wait.add(r)); }
+  function coverRect(img, w, h) {
+    const iw = img.naturalWidth || 1000, ih = img.naturalHeight || 1000, ir = iw / ih, tr = w / h;
+    if (ir > tr) { const sw = ih * tr; return [(iw - sw) / 2, 0, sw, ih]; }
+    const sh = iw / tr; return [0, (ih - sh) / 2, iw, sh];
+  }
+  // Dessine une étiquette à partir d'un modèle importé ; renvoie la zone de chaque champ (mm, relative à l'étiquette).
+  function drawCustomLabel(P, x, y, f, lot, rec, tpl, entry, opts = {}) {
+    const boxes = [];
+    if (entry && entry.ready) P.image(entry, x, y, f.w, f.h);
+    (tpl.champs || []).forEach((c, i) => {
+      let v = fieldValue(c, lot, rec), ph = false;
+      if (!v && opts.editor) { v = "‹ " + fieldLabel(c.k) + " ›"; ph = true; }
+      if (!v) return;
+      const o = { size: Math.max(0.8, num(c.size) || 3), fam: c.fam === "serif" ? "serif" : "sans", bold: !!c.bold, italic: !!c.italic,
+        rgb: ph ? [150, 150, 150] : hexRgb(c.color), align: ["left", "right"].includes(c.align) ? c.align : "center" };
+      const bw = Math.max(2, num(c.w) * f.w), bx = x + num(c.x) * f.w, by = y + num(c.y) * f.h;
+      const maxL = Math.max(c.deux ? 2 : 1, Math.round(num(c.lignes)) || 2);
+      const wr = c.deux
+        ? { lines: splitTwo(v).flatMap(part => wrap(P, part, o, bw, maxL).lines).slice(0, maxL) }
+        : wrap(P, v, o, bw, maxL);
+      const tx = o.align === "left" ? bx : (o.align === "right" ? bx + bw : bx + bw / 2);
+      let cy = by;
+      for (const line of wr.lines) { cy += o.size * 1.18; P.text(line, tx, cy - o.size * 0.28, o); }
+      boxes.push({ i, x: bx - x, y: by - y, w: bw, h: Math.max(o.size * 1.18, cy - by) });
+    });
+    return boxes;
+  }
+  function assetErr(e) {
+    const c = e && e.code;
+    if (c === "too_large") return "L'image est trop lourde (20 Mo au maximum, 2 Mo pour un SVG).";
+    if (c === "unsupported_type") return "Format non pris en charge : utilisez une image PNG, JPG, WebP ou SVG.";
+    if (c === "quota_or_state") return "Il n'y a plus de place pour les images. Supprimez un ancien modèle.";
+    if (c === "rate_limited") return "Trop d'envois d'un coup. Réessayez dans une minute.";
+    return "L'image n'a pas pu être envoyée. Réessayez dans un instant.";
+  }
+
+  function tplEditor(tpl, lot) {
+    const rec = lot.recetteId && state.recettes.find(r => r.id === lot.recetteId);
+    const isEdit = !!(tpl && tpl.id);
+    const t = JSON.parse(JSON.stringify(tpl || {}));
+    t.format = t.format || state.modele.format || "a4-21";
+    if (!Array.isArray(t.champs)) t.champs = [
+      { k: "numero", x: 0.2, y: 0.1, w: 0.6, size: 2.2, fam: "sans", bold: false, italic: false, align: "center", color: "#3a2a33", lignes: 1, avant: "" },
+      { k: "nom", x: 0.08, y: 0.24, w: 0.84, size: 4.2, fam: "serif", bold: true, italic: false, align: "center", color: "#7a1f4a", lignes: 2, avant: "" },
+      { k: "annee", x: 0.2, y: 0.52, w: 0.6, size: 3.2, fam: "serif", bold: false, italic: true, align: "center", color: "#7a1f4a", lignes: 1, avant: "" },
+      { k: "date", x: 0.1, y: 0.7, w: 0.8, size: 2.2, fam: "sans", bold: false, italic: false, align: "center", color: "#3a2a33", lignes: 1, avant: "" },
+    ];
+    let file = null, entry = t.assetId ? getImg(t.assetId) : null, sel = -1, stageK = 1, stageF = fmtById(t.format);
+    const back = () => setTimeout(() => labelForm(lot), 0);
+
+    openForm(isEdit ? `Modifier le modèle « ${t.nom || ""} »` : "Importer un modèle d'étiquette", [
+      field("t_nom", "Nom du modèle", t.nom, { required: true, ph: "Étiquette kraft" }),
+      field("t_format", "Planche d'étiquettes", t.format, { type: "select", options: FORMATS.map(f => ({ v: f.id, t: f.t })) }),
+      `<div class="field wide"><label for="t_file">Image du modèle${isEdit ? " (laisser vide pour garder l'actuelle)" : ""}</label>
+        <input id="t_file" name="t_file" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml">
+        <span class="hint" id="t_ratio"></span></div>`,
+      `<div class="field wide"><div class="stage-wrap"><div class="stage" id="t_stage"><canvas id="t_cv"></canvas><div id="t_boxes"></div></div></div>
+        <span class="hint">Glissez un champ pour le placer. Une fois sélectionné, tirez la poignée ronde pour élargir ou rétrécir le champ : un texte trop long passe sur deux lignes, coupé à l'espace ou au trait d'union. La poignée carrée agrandit le texte. Les valeurs affichées sont celles du lot ${esc(lotTitle(lot))}.</span></div>`,
+      `<div class="field wide"><div class="addrow"><select id="t_add" aria-label="Champ à ajouter">${FIELD_DEFS.filter(d => !d.hidden).map(d => `<option value="${d.k}">${esc(d.t)}</option>`).join("")}</select>
+        <button type="button" class="btn small" id="t_addbtn">+ Ajouter ce champ</button></div></div>`,
+      `<div class="field wide" id="t_props"></div>`,
+    ].join(""), async () => {
+      if (!db || !canWrite) throw { message: "Vous ne pouvez pas enregistrer de modèle dans ce cellier." };
+      const nom = gf("t_nom").value.trim();
+      if (!nom) throw { message: "Donnez un nom au modèle." };
+      if (!file && !t.assetId) throw { message: "Choisissez l'image du modèle." };
+      let assetId = t.assetId || "", oldAsset = "";
+      if (file) {
+        if (!assets) throw { message: "L'envoi d'images n'est pas disponible dans cet affichage." };
+        try { const up = await assets.upload(file, file.type ? undefined : { type: "image/png" }); oldAsset = t.assetId || ""; assetId = up.id; }
+        catch (e) { throw { message: assetErr(e) }; }
+      }
+      const body = { nom, format: gf("t_format").value, assetId, champs: t.champs, modifie: new Date().toISOString() };
+      let id = t.id;
+      if (id) await db.collection("modeles").doc(id).set(body);
+      else { const ref = await db.collection("modeles").add(body); id = ref.id; }
+      if (oldAsset && oldAsset !== assetId && assets) { try { await assets.delete(oldAsset); } catch (e) {} imgCache.delete(oldAsset); }
+      if (file && entry) imgCache.set(assetId, entry);
+      state.modele = { ...MODELE_DEF, ...state.modele, tplId: id, format: body.format };
+      try { await db.doc("reglages/etiquettes").set(state.modele); } catch (e) {}
+      back();
+      return "Modèle enregistré";
+    }, isEdit && canWrite ? async () => {
+      await db.collection("modeles").doc(t.id).delete();
+      if (t.assetId && assets) { try { await assets.delete(t.assetId); } catch (e) {} }
+      if (state.modele.tplId === t.id) { state.modele = { ...state.modele, tplId: "" }; try { await db.doc("reglages/etiquettes").set(state.modele); } catch (e) {} }
+      back();
+    } : null, "Enregistrer le modèle");
+    dlg.classList.add("big");
+    gf("fcancel").onclick = () => { dlg.close(); back(); };
+
+    function ratioHint() {
+      const f = fmtById(gf("t_format").value);
+      let s = `Étiquette de ${fmtMm(f.w)} × ${fmtMm(f.h)} mm${f.round ? " (ronde)" : ""}. Image conseillée : ${Math.round(f.w / 25.4 * 300)} × ${Math.round(f.h / 25.4 * 300)} px.`;
+      if (entry && entry.ready) {
+        const ir = (entry.img.naturalWidth || 1) / (entry.img.naturalHeight || 1), tr = f.w / f.h;
+        s += Math.abs(ir / tr - 1) > 0.05 ? " Votre image n'a pas les mêmes proportions : elle sera recadrée au centre." : " Les proportions de votre image conviennent.";
+      } else if (entry && entry.error) s += " L'image n'a pas pu être lue.";
+      else if (!entry) s += " Créez votre fond dans Canva, Word ou un autre logiciel, puis exportez-le en image.";
+      gf("t_ratio").textContent = s;
+    }
+    function redraw() {
+      const st = gf("t_stage"), cv = gf("t_cv"), bx = gf("t_boxes"); if (!st) return;
+      const f = stageF = fmtById(gf("t_format").value);
+      const avail = Math.max(200, st.parentElement.clientWidth - 18);
+      const cssW = Math.min(avail, f.round ? 420 : 640), k = stageK = cssW / f.w, cssH = f.h * k, dpr = window.devicePixelRatio || 1;
+      st.style.width = cssW + "px"; st.style.height = cssH + "px"; st.classList.toggle("round", !!f.round);
+      cv.width = Math.round(cssW * dpr); cv.height = Math.round(cssH * dpr);
+      const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, cssW, cssH);
+      if (!entry || !entry.ready) {
+        ctx.fillStyle = "#9a8a92"; ctx.font = `${Math.max(11, cssH * 0.07)}px Helvetica, Arial, sans-serif`; ctx.textAlign = "center";
+        ctx.fillText(entry && !entry.error ? "Chargement de l'image…" : "Choisissez une image ci-dessus", cssW / 2, cssH * 0.94);
+      }
+      const boxes = drawCustomLabel(canvasPainter(ctx, k), 0, 0, f, lot, rec, t, entry, { editor: true });
+      bx.innerHTML = boxes.map(b => `<div class="fbox${b.i === sel ? " sel" : ""}" data-i="${b.i}" title="${esc(fieldLabel(t.champs[b.i].k))}" style="left:${b.x * k}px;top:${b.y * k}px;width:${b.w * k}px;height:${b.h * k}px">${b.i === sel ? `<span class="h-w" data-h="w" title="Élargir le champ"></span><span class="h-s" data-h="s" title="Agrandir le texte"></span>` : ""}</div>`).join("");
+    }
+    function renderProps() {
+      const p = gf("t_props"); const c = t.champs[sel];
+      if (!c) { p.innerHTML = `<span class="hint">${t.champs.length ? "Touchez un champ sur l'étiquette pour le régler." : "Ajoutez un premier champ avec le menu ci-dessus."}</span>`; return; }
+      p.innerHTML = `<div class="fields props">
+        <div class="field wide"><div class="quick">
+          <span class="flabel">Police</span>
+          <button type="button" class="btn small" data-step="s-" aria-label="Réduire la police">A−</button>
+          <b id="q_size">${ptOf(c)} pt</b>
+          <button type="button" class="btn small" data-step="s+" aria-label="Agrandir la police">A+</button>
+          <span class="flabel">Largeur du champ</span>
+          <button type="button" class="btn small" data-step="w-" aria-label="Rétrécir le champ">−</button>
+          <b id="q_w">${Math.round(num(c.w) * 100)} %</b>
+          <button type="button" class="btn small" data-step="w+" aria-label="Élargir le champ">+</button>
+        </div></div>
+        ${field("p_k", "Champ", c.k, { type: "select", options: FIELD_DEFS.filter(d => !d.hidden || d.k === c.k).map(d => ({ v: d.k, t: d.t })) })}
+        ${c.k === "texte" ? field("p_texte", "Texte", c.texte, { ph: "Fait maison" }) : field("p_avant", "Texte avant la valeur", c.avant, { ph: "Facultatif, par ex. Mise en pot le" })}
+        ${field("p_size", "Taille de police (pt)", ptOf(c), { type: "number", min: 3, max: 120, step: 0.5 })}
+        ${field("p_lignes", "Lignes au maximum", c.lignes || 2, { type: "number", min: 1, max: 8 })}
+        ${field("p_w", "Largeur de la zone (%)", Math.round(num(c.w) * 100), { type: "number", min: 5, max: 120, step: 5 })}
+        ${field("p_align", "Alignement", c.align, { type: "select", options: [{ v: "left", t: "À gauche" }, { v: "center", t: "Centré" }, { v: "right", t: "À droite" }] })}
+        <div class="field"><label for="p_color">Couleur</label><input id="p_color" name="p_color" type="color" value="${esc(c.color || "#3a2a33")}"></div>
+        <div class="field wide"><div class="checks">${checkbox("p_bold", "Gras", c.bold)}${checkbox("p_italic", "Italique", c.italic)}${checkbox("p_deux", "Toujours sur deux lignes", c.deux)}
+          <button type="button" class="btn small danger" id="p_del" style="margin-left:auto">Retirer ce champ</button></div></div>
+      </div>`;
+    }
+    frm.oninput = (ev) => {
+      const id = ev.target.id || "";
+      if (id === "t_format") { ratioHint(); redraw(); return; }
+      const c = t.champs[sel]; if (!c || !id.startsWith("p_")) return;
+      const el = ev.target;
+      if (id === "p_k") { c.k = el.value; const d = FIELD_DEFS.find(x => x.k === c.k); c.avant = (d && d.avant) || ""; if (c.k === "texte" && !c.texte) c.texte = "Fait maison"; renderProps(); }
+      else if (id === "p_texte") c.texte = el.value;
+      else if (id === "p_avant") c.avant = el.value;
+      else if (id === "p_size") { c.size = (num(el.value) * MM_PT) || c.size; syncProps("p_size"); }
+      else if (id === "p_lignes") c.lignes = Math.max(1, Math.round(num(el.value)) || 1);
+      else if (id === "p_w") { c.w = Math.max(0.05, num(el.value) / 100) || c.w; syncProps("p_w"); }
+      else if (id === "p_fam") c.fam = el.value;
+      else if (id === "p_align") c.align = el.value;
+      else if (id === "p_color") c.color = el.value;
+      else if (id === "p_bold") c.bold = el.checked;
+      else if (id === "p_italic") c.italic = el.checked;
+      else if (id === "p_deux") { c.deux = el.checked; if (c.deux && (Math.round(num(c.lignes)) || 2) < 2) { c.lignes = 2; if (gf("p_lignes")) gf("p_lignes").value = 2; } }
+      redraw();
+    };
+    frm.onchange = null;
+    gf("t_file").onchange = (ev) => {
+      const fl = ev.target.files && ev.target.files[0]; if (!fl) return;
+      file = fl; entry = makeEntry(URL.createObjectURL(fl));
+      entry.wait.add(() => {
+        // Choisit la planche dont les proportions sont les plus proches de l'image.
+        if (entry.ready && entry.img.naturalWidth && entry.img.naturalHeight) {
+          const ir = entry.img.naturalWidth / entry.img.naturalHeight;
+          const best = FORMATS.reduce((a, f) => Math.abs(Math.log(f.w / f.h / ir)) < Math.abs(Math.log(a.w / a.h / ir)) ? f : a);
+          gf("t_format").value = best.id;
+        }
+        ratioHint(); redraw();
+      });
+      ratioHint(); redraw();
+    };
+    gf("t_addbtn").onclick = () => {
+      const k = gf("t_add").value, d = FIELD_DEFS.find(x => x.k === k) || {}, f = fmtById(gf("t_format").value);
+      t.champs.push({ k, x: 0.1, y: 0.42, w: 0.8, size: Math.max(1.5, Math.round(f.h * 0.075 * 4) / 4), fam: "sans", bold: false, italic: false,
+        align: "center", color: "#3a2a33", lignes: k === "ingredients" ? 4 : 2, avant: d.avant || "", texte: k === "texte" ? "Fait maison" : "" });
+      sel = t.champs.length - 1; renderProps(); redraw();
+    };
+    function ptOf(c) { return Math.round(num(c.size) / MM_PT * 2) / 2; }
+    function syncProps(skip) {
+      const c = t.champs[sel]; if (!c) return;
+      const pt = ptOf(c), w = Math.round(num(c.w) * 100);
+      if (gf("q_size")) gf("q_size").textContent = pt + " pt";
+      if (gf("q_w")) gf("q_w").textContent = w + " %";
+      if (skip !== "p_size" && gf("p_size")) gf("p_size").value = pt;
+      if (skip !== "p_w" && gf("p_w")) gf("p_w").value = w;
+    }
+    gf("t_props").addEventListener("click", (ev) => {
+      const stepBtn = ev.target.closest("[data-step]");
+      if (stepBtn && t.champs[sel]) {
+        const c = t.champs[sel], st = stepBtn.dataset.step;
+        if (st === "s+") c.size = Math.min(42, num(c.size) * 1.1);
+        if (st === "s-") c.size = Math.max(1, num(c.size) / 1.1);
+        if (st === "w+") c.w = Math.min(1.3, Math.round((num(c.w) + 0.05) * 100) / 100);
+        if (st === "w-") c.w = Math.max(0.05, Math.round((num(c.w) - 0.05) * 100) / 100);
+        syncProps(); redraw(); return;
+      }
+      if (ev.target.id !== "p_del" || sel < 0) return;
+      t.champs.splice(sel, 1); sel = -1; renderProps(); redraw();
+    });
+    gf("t_boxes").onpointerdown = (ev) => {
+      const b = ev.target.closest(".fbox");
+      if (!b) { sel = -1; renderProps(); redraw(); return; }
+      ev.preventDefault();
+      const i = +b.dataset.i; if (sel !== i) { sel = i; renderProps(); }
+      const handle = ev.target.dataset ? ev.target.dataset.h : "";
+      const c = t.champs[i], s = { px: ev.clientX, py: ev.clientY, x0: num(c.x), y0: num(c.y), w0: num(c.w), s0: num(c.size), bh: Math.max(8, b.offsetHeight) };
+      const clamp = (v, a, z) => Math.min(z, Math.max(a, v));
+      const move = (e) => {
+        if (handle === "w") { c.w = Math.round(clamp(s.w0 + (e.clientX - s.px) / (stageK * stageF.w), 0.05, 1.3) * 1000) / 1000; syncProps(); redraw(); return; }
+        if (handle === "s") { c.size = clamp(s.s0 * (s.bh + (e.clientY - s.py)) / s.bh, 0.8, 42); syncProps(); redraw(); return; }
+        c.x = Math.round(clamp(s.x0 + (e.clientX - s.px) / (stageK * stageF.w), -0.3, 1) * 1000) / 1000;
+        c.y = Math.round(clamp(s.y0 + (e.clientY - s.py) / (stageK * stageF.h), -0.2, 1) * 1000) / 1000;
+        redraw();
+      };
+      const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up); };
+      window.addEventListener("pointermove", move); window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up);
+      redraw();
+    };
+    if (entry) entry.wait.add(() => { ratioHint(); redraw(); });
+    ratioHint(); renderProps(); redraw();
+    loadLabelFonts().then(redraw);
+  }
+
+  function labelForm(lot) {
+    const rec = lot.recetteId && state.recettes.find(r => r.id === lot.recetteId);
+    const m = { ...MODELE_DEF, ...state.modele };
+    const tpls = [...state.modeles].sort((a, b) => String(a.nom).localeCompare(b.nom, "fr"));
+    if (m.tplId && !tpls.some(x => x.id === m.tplId)) m.tplId = "";
+    const chk = checkbox;
+    const lotPots = potsOf(lot);
+    const firstSize = (TAILLES.find(t => lotPots[t.v].n > 0) || TAILLES[1]).v;
+    // Le lot vu par l'étiquette : la taille choisie dans « Pots à étiqueter ».
+    const lotFor = () => ({ ...lot, taille: (gf("e_pot") || {}).value || firstSize });
+    openForm(`Étiquettes · ${lotTitle(lot)}`, [
+      `<div class="field wide"><div class="preview-wrap"><canvas id="e_prev" role="img" aria-label="Aperçu de l'étiquette"></canvas></div><span class="hint" id="e_info"></span></div>`,
+      field("e_tpl", "Modèle", m.tplId || "", { type: "select", options: [{ v: "", t: "Modèle automatique" }].concat(tpls.map(x => ({ v: x.id, t: x.nom || "Sans nom" }))) }),
+      `<div class="field"><span class="flabel">Modèles importés</span><div class="checks">
+        <button type="button" class="btn small" id="e_import">Importer un modèle…</button>
+        <button type="button" class="btn small" id="e_edit">Modifier ce modèle</button></div></div>`,
+      field("e_format", "Planche d'étiquettes", m.format, { type: "select", options: FORMATS.map(f => ({ v: f.id, t: f.t })), wide: true }),
+      field("e_pot", "Pots à étiqueter", firstSize, { type: "select", options: TAILLES.map(t => ({ v: t.v, t: `${t.pl} (${lotPots[t.v].n} pot${lotPots[t.v].n > 1 ? "s" : ""})` })) }),
+      field("e_nb", "Nombre d'étiquettes", lotPots[firstSize].n || 1, { type: "number", min: 1, max: 500 }),
+      field("e_start", "Commencer à l'étiquette n°", 1, { type: "number", min: 1, hint: "Pour finir une planche déjà entamée." }),
+      `<div id="e_auto" class="contents">`,
+      `<div class="field wide"><span class="flabel">Informations imprimées</span><div class="checks">
+        ${chk("e_annee", "Année", m.annee)}${chk("e_date", "Date de mise en pot", m.date)}${chk("e_taille", "Taille du pot", m.taille)}
+        ${chk("e_prov", "Provenance des fruits", m.prov)}${chk("e_fruits", "Fruits (recette)", m.fruits)}${chk("e_sucre", "Taux de sucre", m.sucre)}${chk("e_ing", "Ingrédients", m.ing)}${chk("e_notes", "Notes du lot", m.notes)}
+      </div><span class="hint">Le numéro de lot et le parfum figurent toujours.${rec ? "" : " Ce lot n'a pas de recette liée : fruits, sucre et ingrédients ne s'afficheront pas."}</span></div>`,
+      field("e_mention", "Mention en bas de l'étiquette", m.mention, { wide: true, ph: "Fait maison par Marie" }),
+      field("e_couleur", "Couleur", m.couleur, { type: "select", options: COULEURS.map(c => ({ v: c.v, t: c.t })) }),
+      `<div class="field wide"><div class="checks">${chk("e_cadre", "Cadre décoratif", m.cadre)}</div></div>`,
+      `</div>`,
+      `<div class="field wide"><div class="checks">${chk("e_coupe", "Traits de coupe (papier ordinaire)", m.coupe)}</div></div>`,
+      field("e_dx", "Décalage horizontal (mm)", m.dx, { type: "number", step: 0.5 }),
+      field("e_dy", "Décalage vertical (mm)", m.dy, { type: "number", step: 0.5, hint: "Si l'impression tombe à côté des étiquettes." }),
+    ].join(""), async () => {
+      if (!window.jspdf) throw { message: "Le module PDF n'a pas pu se charger. Rechargez la page." };
+      if (!downloads) throw { message: "L'enregistrement de fichiers n'est pas disponible dans cet affichage." };
+      const mm = read(), f = fmt(mm), per = f.cols * f.rows, tpl = curTpl();
+      let entry = null;
+      if (tpl) {
+        if (!tpl.assetId) throw { message: "Ce modèle n'a pas d'image. Modifiez-le pour en ajouter une." };
+        entry = getImg(tpl.assetId); await imgReady(entry);
+        if (entry.error) throw { message: "L'image du modèle n'a pas pu être chargée. Rechargez la page." };
+      }
+      const nb = Math.min(500, Math.max(1, Math.round(num(g("e_nb").value)) || 1));
+      const st = Math.min(per, Math.max(1, Math.round(num(g("e_start").value)) || 1));
+      const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+      doc.setProperties({ title: `Étiquettes ${lotTitle(lot)}` });
+      // L'étiquette est dessinée une fois à environ 300 dpi avec la police de l'appareil, puis répétée sur la planche.
+      await loadLabelFonts();
+      const px = 12, lc = document.createElement("canvas"); lc.width = Math.round(f.w * px); lc.height = Math.round(f.h * px);
+      const lctx = lc.getContext("2d"); lctx.fillStyle = "#ffffff"; lctx.fillRect(0, 0, lc.width, lc.height);
+      const LP = canvasPainter(lctx, px);
+      if (tpl) drawCustomLabel(LP, 0, 0, f, lotFor(), rec, tpl, entry); else drawLabel(LP, 0, 0, f, lotFor(), rec, mm);
+      const labelPng = lc.toDataURL("image/png");
+      const P = pdfPainter(doc); let pos = st - 1;
+      for (let i = 0; i < nb; i++) {
+        if (pos >= per) { doc.addPage(); pos = 0; }
+        const c = pos % f.cols, r = Math.floor(pos / f.cols);
+        const x = f.left + c * (f.w + f.gx) + mm.dx, y = f.top + r * (f.h + f.gy) + mm.dy;
+        doc.addImage(labelPng, "PNG", x, y, f.w, f.h, "etiquette", "FAST");
+        if (mm.coupe) P.frame(x, y, f.w, f.h, !!f.round, [175, 175, 175], 0.2, true);
+        pos++;
+      }
+      if (canWrite && db && JSON.stringify(mm) !== JSON.stringify({ ...MODELE_DEF, ...state.modele })) {
+        try { await db.doc("reglages/etiquettes").set(mm); state.modele = mm; } catch (e) {}
+      }
+      const safe = norm(lotTitle(lot)).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+      try { await downloads.save({ filename: `Etiquettes-${safe || "lot"}.pdf`, data: doc.output("arraybuffer") }); }
+      catch (e) { throw { message: e && e.code === "declined" ? "Enregistrement annulé." : "Le PDF n'a pas pu être enregistré. Réessayez dans un instant." }; }
+      return "PDF d'étiquettes enregistré";
+    }, null, "Créer le PDF à imprimer");
+
+    const g = gf;
+    const fmt = (mm) => fmtById(mm.format);
+    const curTpl = () => state.modeles.find(x => x.id === g("e_tpl").value) || null;
+    function read() {
+      const c = (id) => g(id).checked;
+      return { tplId: g("e_tpl").value, format: g("e_format").value, police: m.police, couleur: g("e_couleur").value,
+        cadre: c("e_cadre"), coupe: c("e_coupe"), annee: c("e_annee"), date: c("e_date"), cont: false, taille: c("e_taille"),
+        fruits: c("e_fruits"), prov: c("e_prov"), sucre: c("e_sucre"), ing: c("e_ing"), notes: c("e_notes"),
+        mention: g("e_mention").value, dx: num(g("e_dx").value), dy: num(g("e_dy").value) };
+    }
+    function syncTpl() {
+      const tpl = curTpl();
+      g("e_auto").hidden = !!tpl;
+      g("e_edit").hidden = !tpl || !canWrite;
+      g("e_import").hidden = !assets || !canWrite;
+      if (tpl) { g("e_format").value = tpl.format || g("e_format").value; g("e_format").disabled = true; }
+      else g("e_format").disabled = false;
+    }
+    function preview() {
+      if (!g("e_prev")) return;
+      const mm = read(), f = fmt(mm), per = f.cols * f.rows, tpl = curTpl();
+      const cv = g("e_prev");
+      const avail = Math.max(160, (cv.parentElement.clientWidth || 340) - 24);
+      const cssW = Math.min(avail, f.round ? 230 : 360), k = cssW / f.w, cssH = f.h * k, dpr = window.devicePixelRatio || 1;
+      cv.style.width = cssW + "px"; cv.style.height = cssH + "px";
+      cv.width = Math.round(cssW * dpr); cv.height = Math.round(cssH * dpr);
+      cv.classList.toggle("round", !!f.round);
+      const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, cssW, cssH);
+      let note = "";
+      if (tpl) {
+        const entry = tpl.assetId ? getImg(tpl.assetId) : null;
+        if (entry && !entry.ready && !entry.error) entry.wait.add(preview);
+        if (entry && entry.error) note = " L'image du modèle n'a pas pu être chargée.";
+        drawCustomLabel(canvasPainter(ctx, k), 0, 0, f, lotFor(), rec, tpl, entry);
+      } else drawLabel(canvasPainter(ctx, k), 0, 0, f, lotFor(), rec, mm);
+      const st = g("e_start"); st.max = per;
+      const nb = Math.max(1, Math.round(num(g("e_nb").value)) || 1), s0 = Math.min(per, Math.max(1, Math.round(num(st.value)) || 1));
+      const pages = Math.ceil((s0 - 1 + nb) / per);
+      g("e_info").textContent = `${nb} étiquette${nb > 1 ? "s" : ""} sur ${pages} page${pages > 1 ? "s" : ""} A4 (${per} par planche). Imprimez le PDF en taille réelle, à 100 %.${note}${FONT_NOTE}`;
+    }
+    frm.oninput = (ev) => {
+      if (ev.target.id === "e_tpl") syncTpl();
+      if (ev.target.id === "e_pot") g("e_nb").value = lotPots[ev.target.value].n || 1;
+      preview();
+    };
+    frm.onchange = null;
+    g("e_import").onclick = () => tplEditor(null, lot);
+    g("e_edit").onclick = () => { const tpl = curTpl(); if (tpl) tplEditor(tpl, lot); };
+    syncTpl();
+    preview();
+    loadLabelFonts().then(preview);
+  }
+
+  let qt; $("#q").addEventListener("input", (e) => { clearTimeout(qt); qt = setTimeout(() => { state.q = e.target.value.trim(); render(); }, 120); });
+
+  // ---------- Données ----------
+  render();
+  (async () => {
+    if (!window.claude || typeof window.claude.use !== "function") {
+      notice("L'enregistrement n'est pas disponible dans cet affichage. Ce navigateur ne permet pas d'enregistrer les données. Ouvrez l'application dans Safari.");
+      canWrite = false; state.ready = { r: true, l: true }; render(); return;
+    }
+    db = await window.claude.use("db");
+    if (!db) {
+      notice("Ce navigateur ne permet pas d'enregistrer les données (navigation privée ?). Ouvrez l'application depuis son icône sur l'écran d'accueil.");
+      canWrite = false; state.ready = { r: true, l: true }; render(); return;
+    }
+    try {
+      const user = await window.claude.use("user");
+      if (user && typeof user.can === "function") { const w = await user.can("data.write"); if (w === false) { canWrite = false; notice("Vous consultez ce cellier en lecture seule."); } }
+    } catch (e) {}
+    const onErr = (e) => { if (e && e.code !== "revoked") notice("Le cellier ne se met plus à jour. Rechargez la page."); };
+    db.collection("recettes").onSnapshot((snap) => {
+      state.recettes = snap.docs.map(d => ({ id: d.id, ...d.data() })); state.ready.r = true; render();
+      if (flashId) { const id = flashId; flashId = null; if (state.view === "carnet") goToRecipe(id); }
+    }, onErr);
+    try { assets = await window.claude.use("assets"); } catch (e) { assets = null; }
+    db.collection("modeles").onSnapshot((snap) => { state.modeles = snap.docs.map(d => ({ id: d.id, ...d.data() })); }, () => {});
+    db.doc("reglages/etiquettes").onSnapshot((s) => { state.modele = s.exists ? { ...MODELE_DEF, ...s.data() } : { ...MODELE_DEF }; }, () => {});
+    db.collection("lots").onSnapshot((snap) => {
+      state.lots = snap.docs.map(d => ({ id: d.id, ...d.data() })); state.ready.l = true; render();
+    }, onErr);
+  })();
+})();
+</script>
+</body>
+</html>
