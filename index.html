@@ -148,6 +148,36 @@ button { cursor: pointer; }
 .yr { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: grid; gap: 4px; justify-items: start; }
 .yr .s { font-family: var(--f-mono); font-size: 22px; }
 .arrow { color: var(--muted); font-size: 22px; }
+.lieu-block { display: grid; gap: 6px; padding-top: 6px; border-top: 1px dashed var(--line); }
+.lieu-block:first-child { border-top: 0; padding-top: 0; }
+.lieu-name { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 14px; }
+.lieu-name span { color: var(--muted); font-size: 13px; }
+.lieux { display: grid; gap: 6px; }
+.lrow { display: grid; grid-template-columns: minmax(0, 1.7fr) repeat(3, minmax(0, .8fr)) 34px; gap: 6px; align-items: center; }
+.lrow.head span { font-size: 12px; color: var(--muted); font-weight: 600; }
+.lrow input { border: 1px solid var(--line); border-radius: 8px; padding: 8px; background: var(--bg); width: 100%; min-width: 0; }
+.l-del { border: 1px solid var(--line); background: var(--paper); border-radius: 8px; height: 36px; font-size: 18px; color: var(--muted); }
+.l-del:hover { color: var(--danger); border-color: var(--danger); }
+@media (max-width: 520px) {
+  .lrow { grid-template-columns: repeat(3, minmax(0, 1fr)) 34px; }
+  .lrow .l-nom { grid-column: 1 / -1; }
+  .lrow.head span:first-child { display: none; }
+  .lrow:not(.head) { padding-top: 8px; border-top: 1px dashed var(--line); }
+}
+.remplis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.remplis label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+.remplis input { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--bg); width: 100%; min-width: 0; }
+.places { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.place { border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.place.none { border-style: dashed; }
+.pl-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.pl-head b { overflow-wrap: anywhere; }
+.pl-n { font-family: var(--f-display); font-size: 28px; line-height: 1; font-variant-numeric: tabular-nums; }
+.pl-n small { font-family: var(--f-body); font-size: 13px; color: var(--muted); }
+.place .lb-track { height: 12px; }
+.pl-parfums { display: flex; flex-wrap: wrap; gap: 6px; }
+.pl-chip { font-size: 13px; background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; }
+.pl-chip b { font-family: var(--f-mono); font-weight: 500; margin-left: 2px; }
 /* Onglet Étiquettes */
 .etq { display: grid; gap: 28px; }
 .etq-sec { display: grid; gap: 14px; }
@@ -367,7 +397,7 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
 <script>
 (() => {
   const THIS_YEAR = new Date().getFullYear();
-  const state = { view: "dashboard", year: "all", taille: "all", sort: "numero", q: "", recettes: [], lots: [], ready: { r: false, l: false } };
+  const state = { view: "dashboard", year: "all", taille: "all", lieu: "all", sort: "numero", q: "", recettes: [], lots: [], ready: { r: false, l: false } };
   const TAILLES = [
     { v: "petit", t: "Petit", pl: "Petits", g: 250 },
     { v: "standard", t: "Standard", pl: "Standards", g: 370 },
@@ -390,7 +420,36 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
     } else {
       const r = Math.max(0, num(l.restants)); out[tailleOf(l)] = { n: Math.max(r, num(l.nbPots)), r };
     }
+    // Lot réparti entre plusieurs lieux : les pots restants sont la somme des lieux.
+    if (Array.isArray(l.lieux) && l.lieux.length) TAILLES.forEach(t => {
+      const r = l.lieux.reduce((a, x) => a + Math.max(0, Math.round(num((x.pots || {})[t.v]))), 0);
+      out[t.v] = { n: Math.max(out[t.v].n, r), r };
+    });
     return out;
+  }
+  // Lieux de stockage d'un lot : [{ nom, pots: { petit, standard, grand } }] (pots restants dans ce lieu).
+  function lieuxOf(l) {
+    if (Array.isArray(l.lieux) && l.lieux.length) return l.lieux.map(x => {
+      const pots = {}; TAILLES.forEach(t => { pots[t.v] = Math.max(0, Math.round(num((x.pots || {})[t.v]))); });
+      return { nom: String(x.nom || "").trim(), pots };
+    });
+    const P = potsOf(l), pots = {}; TAILLES.forEach(t => { pots[t.v] = P[t.v].r; });
+    return [{ nom: String(l.emplacement || "").trim(), pots }];
+  }
+  const lieuTotal = (x) => TAILLES.reduce((a, t) => a + x.pots[t.v], 0);
+  const lieuKey = (nom) => norm(String(nom || "").trim()) || "_";
+  // Champs d'un lot calculés à partir des pots remplis par taille et de la répartition par lieu.
+  function lotBody(nBySize, lieux) {
+    const merged = [];
+    lieux.forEach(x => {
+      const k = lieuKey(x.nom), same = merged.find(m => lieuKey(m.nom) === k);
+      if (same) TAILLES.forEach(t => { same.pots[t.v] += x.pots[t.v]; }); else merged.push({ nom: String(x.nom || "").trim(), pots: { ...x.pots } });
+    });
+    if (!merged.length) merged.push({ nom: "", pots: { petit: 0, standard: 0, grand: 0 } });
+    const pots = {};
+    TAILLES.forEach(t => { const r = merged.reduce((a, x) => a + x.pots[t.v], 0); pots[t.v] = { n: Math.max(Math.round(num(nBySize[t.v])), r), r }; });
+    return { lieux: merged, pots, nbPots: TAILLES.reduce((a, t) => a + pots[t.v].n, 0), restants: TAILLES.reduce((a, t) => a + pots[t.v].r, 0),
+      emplacement: merged.map(x => x.nom).filter(Boolean).join(", ") };
   }
   const lotTitle = (l) => (l.numero ? `${l.numero} - ` : "") + (l.nom || "Sans nom");
   // Numéros de lot : uniques pour une même année (on peut avoir un lot 1 en 2025 et un lot 1 en 2026).
@@ -453,19 +512,25 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
     const P = potsOf(l);
     const n = TAILLES.reduce((a, t) => a + P[t.v].r, 0), total = TAILLES.reduce((a, t) => a + P[t.v].n, 0);
     const used = TAILLES.filter(t => P[t.v].n > 0);
-    const rows = (used.length ? used : [TAILLES[1]]).map(t => {
-      const p = P[t.v], shown = Math.min(p.n, 12);
-      const jars = Array.from({ length: shown }, (_, i) => `<span class="jar ${t.v}${i < p.r ? " full" : ""}"></span>`).join("") + (p.n > shown ? `<span class="hint">+${p.n - shown}</span>` : "");
+    const L = lieuxOf(l), multi = L.length > 1;
+    const srow = (t, r, nn, li, where) => {
+      const shown = Math.min(nn, 12);
+      const jars = Array.from({ length: shown }, (_, i) => `<span class="jar ${t.v}${i < r ? " full" : ""}"></span>`).join("") + (nn > shown ? `<span class="hint">+${nn - shown}</span>` : "");
+      const lbl = `${t.t.toLowerCase()}${where ? " (" + where + ")" : ""}`;
       return `<div class="srow"><span class="size-tag">${t.t}</span><span class="jars" aria-hidden="true">${jars}</span>
-        <span class="n"><b>${p.r}</b>/${p.n}</span>
-        <span class="stepper"><button type="button" data-act="minus" data-size="${t.v}" aria-label="Retirer un pot ${t.t.toLowerCase()}" ${p.r === 0 || !canWrite ? "disabled" : ""}>−</button><button type="button" data-act="plus" data-size="${t.v}" aria-label="Ajouter un pot ${t.t.toLowerCase()}" ${!canWrite ? "disabled" : ""}>+</button></span></div>`;
-    }).join("");
+        <span class="n"><b>${r}</b>${multi ? "" : "/" + nn}</span>
+        <span class="stepper"><button type="button" data-act="minus" data-size="${t.v}" data-lieu="${li}" aria-label="Retirer un pot ${esc(lbl)}" ${r === 0 || !canWrite ? "disabled" : ""}>−</button><button type="button" data-act="plus" data-size="${t.v}" data-lieu="${li}" aria-label="Ajouter un pot ${esc(lbl)}" ${!canWrite ? "disabled" : ""}>+</button></span></div>`;
+    };
+    const rows = multi
+      ? L.map((x, i) => { const ts = TAILLES.filter(t => x.pots[t.v] > 0); const tot = lieuTotal(x);
+          return `<div class="lieu-block"><div class="lieu-name"><b>${esc(x.nom || "Lieu non indiqué")}</b><span>${tot} pot${tot > 1 ? "s" : ""}</span></div>${ts.map(t => srow(t, x.pots[t.v], x.pots[t.v], i, x.nom)).join("")}</div>`; }).join("")
+      : (used.length ? used : [TAILLES[1]]).map(t => srow(t, P[t.v].r, P[t.v].n, 0, "")).join("");
     const pill = n === 0 ? `<span class="pill out">Épuisé</span>` : (n <= 2 ? `<span class="pill low">Bientôt fini</span>` : "");
     const rec = l.recetteId && state.recettes.find(r => r.id === l.recetteId);
     const meta = [
       l.date ? `<span>Mise en pot : ${esc(fmtDate(l.date))}</span>` : "",
       l.provenance ? `<span>Fruits de ${esc(l.provenance)}</span>` : "",
-      l.emplacement ? `<span>${esc(l.emplacement)}</span>` : ""
+      !multi && L[0].nom ? `<span>${esc(L[0].nom)}</span>` : ""
     ].filter(Boolean).join("");
     return `<article class="label${n === 0 ? " empty-lot" : ""}" data-lot="${esc(l.id)}">
       <div class="top"><h3>${esc(lotTitle(l))}</h3><span class="vintage">${esc(l.annee || "—")}</span></div>
@@ -478,6 +543,8 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
       <div class="actions">
         ${rec ? `<button class="btn ghost small" data-act="see-recipe" data-id="${esc(rec.id)}">Voir la recette</button>` : ""}
         <button class="btn ghost small" data-act="labels">Étiquettes</button>
+        ${n > 0 ? `<button class="btn ghost small" data-act="move-lot" ${!canWrite ? "disabled" : ""}>Déplacer des pots</button>` : ""}
+        <button class="btn ghost small" data-act="dup-lot" ${!canWrite ? "disabled" : ""}>Dupliquer</button>
         <button class="btn ghost small" data-act="edit-lot" ${!canWrite ? "disabled" : ""}>Modifier</button>
       </div>
     </article>`;
@@ -492,11 +559,16 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
 
   function renderCellier() {
     const base = state.lots.filter(l => (state.year === "all" || String(l.annee) === String(state.year)) && matches(l, ["numero", "nom", "emplacement", "provenance", "notes"]));
-    let lots = base.filter(l => state.taille === "all" || potsOf(l)[state.taille].n > 0);
+    const allLieux = new Map(); state.lots.forEach(l => lieuxOf(l).forEach(x => { const k = lieuKey(x.nom); if (!allLieux.has(k)) allLieux.set(k, x.nom || "Lieu non indiqué"); }));
+    if (state.lieu !== "all" && !allLieux.has(state.lieu)) state.lieu = "all";
+    const inLieu = (l) => state.lieu === "all" ? null : lieuxOf(l).filter(x => lieuKey(x.nom) === state.lieu);
+    const rOf = (l, size) => { const xs = inLieu(l); return xs ? xs.reduce((a, x) => a + x.pots[size], 0) : potsOf(l)[size].r; };
+    const base2 = base.filter(l => state.lieu === "all" || inLieu(l).length);
+    let lots = base2.filter(l => state.taille === "all" || potsOf(l)[state.taille].n > 0);
     lots.sort(SORTS[state.sort] || SORTS.numero);
     if (!state.ready.l) return `<div class="empty"><h3>Ouverture du cellier…</h3><p>Vos lots de pots vont apparaître ici.</p></div>`;
     if (!state.lots.length) return `<div class="empty"><h3>Le cellier est vide</h3><p>Ajoutez votre premier lot : le parfum, l'année et le nombre de pots remplis.</p><button class="btn primary" data-act="new-lot">+ Nouveau lot</button></div>`;
-    const parTaille = TAILLES.map(t => ({ ...t, n: base.reduce((a, l) => a + potsOf(l)[t.v].r, 0) }));
+    const parTaille = TAILLES.map(t => ({ ...t, n: base2.reduce((a, l) => a + rOf(l, t.v), 0) }));
     const sizes = `<div class="sizes" aria-label="Pots restants par taille">
       <span>En réserve :</span>
       ${parTaille.map(t => `<span><b>${t.n}</b> ${t.n > 1 ? t.pl.toLowerCase() : t.t.toLowerCase()}</span>`).join("")}
@@ -504,6 +576,9 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
         <button class="chip" data-taille="all" aria-pressed="${state.taille === "all"}">Toutes tailles</button>
         ${TAILLES.map(t => `<button class="chip" data-taille="${t.v}" aria-pressed="${state.taille === t.v}">${t.pl}</button>`).join("")}
       </span>
+      ${allLieux.size > 1 ? `<label class="sortby" for="lieuSel"><span>Lieu</span>
+        <select id="lieuSel"><option value="all">Tous les lieux</option>${[...allLieux].sort((a, b) => (a[0] === "_") - (b[0] === "_") || a[1].localeCompare(b[1], "fr")).map(([k, n]) => `<option value="${esc(k)}" ${state.lieu === k ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>
+      </label>` : ""}
       <label class="sortby" for="sortSel"><span>Trier par</span>
         <select id="sortSel">${[["numero", "N° de lot"], ["alpha", "Ordre alphabétique"], ["restants", "Pots restants"]].map(([v, t]) => `<option value="${v}" ${state.sort === v ? "selected" : ""}>${t}</option>`).join("")}</select>
       </label>
@@ -583,7 +658,7 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
     let input;
     if (opts.type === "textarea") input = `<textarea id="${id}" name="${id}" placeholder="${esc(opts.ph || "")}">${v}</textarea>`;
     else if (opts.type === "select") input = `<select id="${id}" name="${id}">${opts.options.map(o => `<option value="${esc(o.v)}" ${String(o.v) === String(value ?? "") ? "selected" : ""}>${esc(o.t)}</option>`).join("")}</select>`;
-    else input = `<input id="${id}" name="${id}" type="${opts.type || "text"}" value="${v}" ${opts.min != null ? `min="${opts.min}"` : ""} ${opts.max != null ? `max="${opts.max}"` : ""} ${opts.step ? `step="${opts.step}"` : ""} placeholder="${esc(opts.ph || "")}" ${opts.required ? "required" : ""}>`;
+    else input = `<input id="${id}" name="${id}" type="${opts.type || "text"}" value="${v}" ${opts.min != null ? `min="${opts.min}"` : ""} ${opts.max != null ? `max="${opts.max}"` : ""} ${opts.step ? `step="${opts.step}"` : ""} ${opts.list ? `list="${opts.list}" autocomplete="off"` : ""} placeholder="${esc(opts.ph || "")}" ${opts.required ? "required" : ""}>`;
     return `<div class="${cls}"><label for="${id}">${label}</label>${input}${opts.hint ? `<span class="hint">${opts.hint}</span>` : ""}</div>`;
   }
 
@@ -626,21 +701,46 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
     return [{ v: "", t: "— Aucune —" }].concat([...state.recettes].sort((a, b) => num(b.annee) - num(a.annee) || String(a.nom).localeCompare(b.nom, "fr")).map(r => ({ v: r.id, t: `${r.nom} (${r.annee})` })));
   }
 
+  // Numéro proposé pour un parfum : celui de son dernier lot, s'il est encore libre pour l'année choisie.
+  function proposeNumero(nom, annee, selfId) {
+    const k = norm(String(nom || "").trim());
+    if (!k) return { n: "", why: "Saisissez d'abord le parfum." };
+    const prev = state.lots.filter(l => l.id !== selfId && norm(l.nom) === k && num(l.numero))
+      .sort((a, b) => num(b.annee) - num(a.annee) || String(b.date || "").localeCompare(String(a.date || "")))[0];
+    if (!prev) return { n: "", why: "Nouveau parfum : choisissez un numéro." };
+    const n = num(prev.numero);
+    const used = state.lots.find(l => l.id !== selfId && num(l.annee) === num(annee) && num(l.numero) === n);
+    if (used) return { n: "", why: `Le n° ${n} de ce parfum est déjà utilisé en ${num(annee)} (« ${esc(used.nom)} »). Prochain numéro libre : ${nextNumero(annee)}.` };
+    return { n, why: `Numéro repris du lot ${esc(lotTitle(prev))} de ${esc(prev.annee)}.` };
+  }
+  const uniq = (arr) => [...new Map(arr.filter(Boolean).map(v => [norm(String(v).trim()), String(v).trim()])).values()].sort((a, b) => a.localeCompare(b, "fr"));
+
   function lotForm(l = {}, preset = {}) {
     const d = { annee: THIS_YEAR, date: new Date().toISOString().slice(0, 7), ...preset, ...l };
     const isEdit = !!l.id;
-    const P0 = isEdit ? potsOf(l) : { petit: { n: 0, r: 0 }, standard: { n: num(preset.nbPots) || 6, r: 0 }, grand: { n: 0, r: 0 } };
-    const potGrid = `<div class="field wide"><span class="flabel">Nombre de pots</span>
-      <div class="potgrid${isEdit ? " edit" : ""}">
-        <span></span><span class="flabel">Remplis</span>${isEdit ? `<span class="flabel">Restants</span>` : ""}
-        ${TAILLES.map(t => `<label for="f_n_${t.v}">${t.t}</label>
-          <input id="f_n_${t.v}" name="f_n_${t.v}" type="number" min="0" value="${P0[t.v].n}">
-          ${isEdit ? `<input id="f_r_${t.v}" name="f_r_${t.v}" type="number" min="0" value="${P0[t.v].r}" aria-label="${t.t} : pots restants">` : ""}`).join("")}
-      </div><span class="hint" id="f_tot"></span></div>`;
-    if (!isEdit && !d.numero) d.numero = nextNumero(d.annee);
-    openForm(isEdit ? "Modifier le lot" : "Nouveau lot de pots", [
-      field("f_num", "N° de lot", d.numero, { type: "number", min: 1, hint: isEdit ? "" : "Proposé automatiquement." }),
-      field("f_nom", "Parfum", d.nom, { required: true, ph: "Abricot-lavande" }),
+    const P0 = isEdit ? potsOf(l) : null;
+    const L0 = isEdit ? lieuxOf(l)
+      : (preset.lieux || [{ nom: preset.emplacement || "", pots: { petit: 0, standard: num(preset.nbPots) || 6, grand: 0 } }]);
+    let rowSeq = 0;
+    const lieuRow = (x) => { const i = rowSeq++; return `<div class="lrow">
+        <input id="f_l${i}_nom" class="l-nom" type="text" list="dl_empl" autocomplete="off" placeholder="Cave" value="${esc(x.nom)}" aria-label="Lieu de stockage">
+        ${TAILLES.map(t => `<input id="f_l${i}_${t.v}" class="l-n" data-size="${t.v}" type="number" min="0" inputmode="numeric" value="${num(x.pots[t.v]) || 0}" aria-label="${t.pl}">`).join("")}
+        <button type="button" class="l-del" aria-label="Retirer ce lieu" title="Retirer ce lieu">×</button></div>`; };
+    const potGrid = `${isEdit ? `<div class="field wide"><span class="flabel">Pots remplis au départ</span>
+        <div class="remplis">${TAILLES.map(t => `<label for="f_n_${t.v}">${t.t}<input id="f_n_${t.v}" name="f_n_${t.v}" type="number" min="0" inputmode="numeric" value="${P0[t.v].n}"></label>`).join("")}</div></div>` : ""}
+      <div class="field wide"><span class="flabel">${isEdit ? "Pots restants par lieu de stockage" : "Pots remplis et lieu de stockage"}</span>
+        <div class="lieux" id="f_lieux"><div class="lrow head"><span>Lieu</span>${TAILLES.map(t => `<span>${t.pl}</span>`).join("")}<span></span></div>${L0.map(lieuRow).join("")}</div>
+        <div><button type="button" class="btn small" id="f_addlieu">+ Ajouter un lieu</button></div>
+        <span class="hint" id="f_tot"></span></div>`;
+    const prop = isEdit ? { n: d.numero, why: "" } : proposeNumero(d.nom, d.annee);
+    if (!isEdit) d.numero = prop.n;
+    const datalist = (id, vals) => `<datalist id="${id}">${vals.map(v => `<option value="${esc(v)}"></option>`).join("")}</datalist>`;
+    openForm(isEdit ? "Modifier le lot" : (preset.dupOf ? `Nouveau lot · copie de ${preset.dupOf}` : "Nouveau lot de pots"), [
+      field("f_nom", "Parfum", d.nom, { required: true, ph: "Abricot-lavande", list: "dl_nom" }),
+      field("f_num", "N° de lot", d.numero, { type: "number", min: 1, hint: `<span id="f_numwhy">${prop.why}</span>` }),
+      datalist("dl_nom", uniq(state.lots.map(x => x.nom).concat(state.recettes.map(x => x.nom)))),
+      datalist("dl_empl", uniq(state.lots.flatMap(x => lieuxOf(x).map(y => y.nom)))),
+      datalist("dl_prov", uniq(state.lots.map(x => x.provenance))),
       field("f_annee", "Année", d.annee, { type: "number", min: 1950, max: 2100 }),
       (() => {
         const dm = /^(\d{4})-(\d{2})/.exec(d.date || "");
@@ -650,8 +750,7 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
           <input id="f_dan" name="f_dan" type="number" min="1950" max="2100" value="${esc(an)}" aria-label="Année de mise en pot"></div></div>`;
       })(),
       potGrid,
-      field("f_empl", "Rangement", d.emplacement, { ph: "Cave, étagère du haut" }),
-      field("f_prov", "Provenance des fruits", d.provenance, { ph: "PARIS" }),
+      field("f_prov", "Provenance des fruits", d.provenance, { ph: "PARIS", list: "dl_prov" }),
       field("f_rec", "Recette", d.recetteId, { type: "select", options: recipeOptions(), wide: true }),
       field("f_notes", "Notes", d.notes, { type: "textarea", wide: true, ph: "Un peu liquide, à offrir à Noël…" }),
     ].join(""), async (f) => {
@@ -663,35 +762,89 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
       const body = {
         numero, nom: f.f_nom.trim(), annee: num(f.f_annee) || THIS_YEAR, date: f.f_mois && num(f.f_dan) ? `${Math.round(num(f.f_dan))}-${f.f_mois}` : "",
         provenance: (f.f_prov || "").trim().toUpperCase(),
-        emplacement: f.f_empl.trim(), recetteId: f.f_rec || "", notes: f.f_notes.trim(),
+        recetteId: f.f_rec || "", notes: f.f_notes.trim(),
         exemple: false, modifie: new Date().toISOString()
       };
-      body.pots = {};
-      TAILLES.forEach(t => {
-        let n = Math.max(0, Math.round(num(f["f_n_" + t.v])));
-        const r = isEdit ? Math.max(0, Math.round(num(f["f_r_" + t.v]))) : n;
-        if (r > n) n = r;
-        body.pots[t.v] = { n, r };
-      });
-      body.nbPots = TAILLES.reduce((a, t) => a + body.pots[t.v].n, 0);
-      body.restants = TAILLES.reduce((a, t) => a + body.pots[t.v].r, 0);
+      const lieux = readLieux(), nBy = {};
+      TAILLES.forEach(t => { nBy[t.v] = isEdit ? Math.max(0, Math.round(num(f["f_n_" + t.v]))) : lieux.reduce((a, x) => a + x.pots[t.v], 0); });
+      Object.assign(body, lotBody(nBy, lieux));
       if (isEdit) await db.collection("lots").doc(l.id).set(body);
       else await db.collection("lots").add(body);
       return isEdit ? "Lot mis à jour" : "Lot ajouté au cellier";
     }, isEdit ? () => db.collection("lots").doc(l.id).delete() : null);
+    function readLieux() {
+      return [...gf("f_lieux").querySelectorAll(".lrow:not(.head)")].map(r => {
+        const pots = {}; TAILLES.forEach(t => { pots[t.v] = Math.max(0, Math.round(num(r.querySelector(`.l-n[data-size="${t.v}"]`).value))); });
+        return { nom: r.querySelector(".l-nom").value.trim(), pots };
+      }).filter(x => x.nom || lieuTotal(x) > 0);
+    }
     const tot = () => {
-      const n = TAILLES.reduce((a, t) => a + Math.max(0, num((gf("f_n_" + t.v) || {}).value)), 0);
-      const r = isEdit ? TAILLES.reduce((a, t) => a + Math.max(0, num((gf("f_r_" + t.v) || {}).value)), 0) : n;
-      gf("f_tot").textContent = isEdit ? `Total : ${r} restants sur ${n} pots remplis.` : `Total : ${n} pot${n > 1 ? "s" : ""}.`;
+      const L = readLieux(), r = L.reduce((a, x) => a + lieuTotal(x), 0);
+      const n = isEdit ? Math.max(r, TAILLES.reduce((a, t) => a + Math.max(0, num((gf("f_n_" + t.v) || {}).value)), 0)) : r;
+      const detail = L.length > 1 ? " (" + L.map(x => `${x.nom || "sans lieu"} : ${lieuTotal(x)}`).join(", ") + ")" : "";
+      gf("f_tot").textContent = isEdit ? `Total : ${r} restants${detail} sur ${n} pots remplis.` : `Total : ${n} pot${n > 1 ? "s" : ""}${detail}.`;
+    };
+    gf("f_addlieu").onclick = () => { gf("f_lieux").insertAdjacentHTML("beforeend", lieuRow({ nom: "", pots: {} })); const rs = gf("f_lieux").querySelectorAll(".l-nom"); rs[rs.length - 1].focus(); tot(); };
+    gf("f_lieux").onclick = (ev) => {
+      const del = ev.target.closest(".l-del"); if (!del) return;
+      del.closest(".lrow").remove();
+      if (!gf("f_lieux").querySelector(".lrow:not(.head)")) gf("f_lieux").insertAdjacentHTML("beforeend", lieuRow({ nom: "", pots: {} }));
+      tot();
     };
     let numTouched = isEdit;
     frm.oninput = (ev) => {
       const id = ev && ev.target ? ev.target.id : "";
-      if (id === "f_num") numTouched = true;
-      if (id === "f_annee" && !numTouched && num(ev.target.value) > 1900) gf("f_num").value = nextNumero(num(ev.target.value));
+      if (id === "f_num") numTouched = gf("f_num").value !== "";
+      if ((id === "f_nom" || id === "f_annee") && !isEdit) {
+        const p = proposeNumero(gf("f_nom").value, num(gf("f_annee").value) || THIS_YEAR);
+        if (!numTouched) gf("f_num").value = p.n;
+        gf("f_numwhy").innerHTML = p.why;
+      }
       tot();
     };
     tot();
+  }
+
+  function moveForm(lot) {
+    const L = lieuxOf(lot);
+    const src = L.map((x, i) => ({ i, x })).filter(o => lieuTotal(o.x) > 0);
+    if (!src.length) { toast("Ce lot n'a plus de pots à déplacer."); return; }
+    const names = uniq(state.lots.flatMap(x => lieuxOf(x).map(y => y.nom)));
+    const lname = (x) => x.nom || "Lieu non indiqué";
+    openForm(`Déplacer des pots · ${lotTitle(lot)}`, [
+      field("m_from", "Depuis", src[0].i, { type: "select", options: src.map(o => ({ v: o.i, t: `${lname(o.x)} (${lieuTotal(o.x)} pots)` })) }),
+      field("m_to", "Vers", "", { list: "dl_to", ph: "Placard de la cuisine", required: true, hint: "Un lieu existant ou un nouveau lieu." }),
+      `<datalist id="dl_to">${names.map(v => `<option value="${esc(v)}"></option>`).join("")}</datalist>`,
+      field("m_size", "Taille des pots", "", { type: "select", options: [] }),
+      field("m_n", "Nombre de pots", 1, { type: "number", min: 1 }),
+      `<div class="field wide"><span class="hint" id="m_info"></span></div>`,
+    ].join(""), async (f) => {
+      const from = L[Math.round(num(f.m_from))], to = String(f.m_to || "").trim(), size = f.m_size, n = Math.round(num(f.m_n));
+      if (!from) throw { message: "Choisissez le lieu de départ." };
+      if (!to) throw { message: "Indiquez le lieu d'arrivée." };
+      if (lieuKey(to) === lieuKey(from.nom)) throw { message: "Le lieu d'arrivée doit être différent du lieu de départ." };
+      if (!TAILLES.some(t => t.v === size)) throw { message: "Choisissez la taille des pots." };
+      if (n < 1) throw { message: "Indiquez au moins 1 pot." };
+      if (n > from.pots[size]) throw { message: `Il n'y a que ${from.pots[size]} pot${from.pots[size] > 1 ? "s" : ""} ${tailleLabel(size).toLowerCase()}${from.pots[size] > 1 ? "s" : ""} dans ${lname(from)}.` };
+      from.pots[size] -= n;
+      let dest = L.find(x => lieuKey(x.nom) === lieuKey(to));
+      if (!dest) { dest = { nom: to, pots: { petit: 0, standard: 0, grand: 0 } }; L.push(dest); }
+      dest.pots[size] += n;
+      const kept = L.filter(x => lieuTotal(x) > 0);
+      const P = potsOf(lot), nBy = {}; TAILLES.forEach(t => { nBy[t.v] = P[t.v].n; });
+      await db.collection("lots").doc(lot.id).update(lotBody(nBy, kept.length ? kept : [dest]));
+      return `${n} pot${n > 1 ? "s" : ""} déplacé${n > 1 ? "s" : ""} vers ${dest.nom}`;
+    }, null, "Déplacer");
+    const sync = () => {
+      const from = L[Math.round(num(gf("m_from").value))] || src[0].x, sel = gf("m_size"), cur = sel.value;
+      const ok = TAILLES.filter(t => from.pots[t.v] > 0);
+      sel.innerHTML = ok.map(t => `<option value="${t.v}" ${t.v === cur ? "selected" : ""}>${t.pl} (${from.pots[t.v]} dans ce lieu)</option>`).join("");
+      const avail = from.pots[sel.value] || 0;
+      gf("m_n").max = avail;
+      gf("m_info").textContent = `${avail} pot${avail > 1 ? "s" : ""} ${tailleLabel(sel.value).toLowerCase()}${avail > 1 ? "s" : ""} disponible${avail > 1 ? "s" : ""} dans ${lname(from)}.`;
+    };
+    frm.oninput = (ev) => { if (ev.target.id === "m_from" || ev.target.id === "m_size") sync(); };
+    sync();
   }
 
   function recipeForm(r = {}, opts = {}) {
@@ -743,7 +896,14 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
     if (act === "new-lot" && db) return lotForm();
     if (act === "new-recipe" && db) return recipeForm();
     if (act === "edit-lot" && lot) return lotForm(lot);
+    if (act === "dup-lot" && lot) {
+      // Copie : mêmes parfum, pots, lieu, provenance et recette ; nouvelle année et mois en cours.
+      const p = potsOf(lot), first = lieuxOf(lot).find(x => lieuTotal(x) > 0) || lieuxOf(lot)[0], pots = {};
+      TAILLES.forEach(t => { pots[t.v] = p[t.v].n; });
+      return lotForm({}, { nom: lot.nom, lieux: [{ nom: first.nom, pots }], provenance: lot.provenance || "", recetteId: lot.recetteId || "", notes: lot.notes || "", dupOf: lotTitle(lot) });
+    }
     if (act === "labels" && lot) return labelForm(lot);
+    if (act === "move-lot" && lot) return moveForm(lot);
     if (act === "tpl-new") return tplEditor(null, sampleLot(), () => render());
     if (act === "tpl-edit") { const t = (state.modeles || []).find(x => x.id === b.dataset.tpl); if (t) return tplEditor(t, sampleLot(), () => render()); return; }
     if (act === "edit-recipe" && rec) return recipeForm(rec);
@@ -752,12 +912,12 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
     if ((act === "see-recipe" || act === "goto")) { goToRecipe(b.dataset.id); return; }
     if ((act === "minus" || act === "plus") && lot && db) {
       const size = TAILLES.some(t => t.v === b.dataset.size) ? b.dataset.size : "standard";
-      const pots = potsOf(lot), p = pots[size];
-      p.r = Math.max(0, p.r + (act === "plus" ? 1 : -1));
-      if (p.r > p.n) p.n = p.r;
-      const patch = { pots, nbPots: TAILLES.reduce((a, t) => a + pots[t.v].n, 0), restants: TAILLES.reduce((a, t) => a + pots[t.v].r, 0) };
+      const L = lieuxOf(lot), li = Math.min(L.length - 1, Math.max(0, Math.round(num(b.dataset.lieu))));
+      L[li].pots[size] = Math.max(0, L[li].pots[size] + (act === "plus" ? 1 : -1));
+      const P = potsOf(lot), nBy = {}; TAILLES.forEach(t => { nBy[t.v] = P[t.v].n; });
+      const patch = lotBody(nBy, L);
       b.disabled = true;
-      const lbl = tailleLabel(size).toLowerCase();
+      const lbl = tailleLabel(size).toLowerCase() + (L.length > 1 && L[li].nom ? ` (${L[li].nom})` : "");
       try { await db.collection("lots").doc(lot.id).update(patch); toast(act === "minus" ? `Un pot ${lbl} de ${lot.nom} en moins` : `Un pot ${lbl} de ${lot.nom} en plus`); }
       catch (e) { toast("La modification n'a pas été enregistrée."); b.disabled = false; }
     }
@@ -781,16 +941,19 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
   function buildWorkbook() {
     const recById = new Map(state.recettes.map(r => [r.id, r]));
     const lots = [...state.lots].sort((a, b) => num(b.annee) - num(a.annee) || String(a.nom).localeCompare(b.nom, "fr"));
-    const stock = lots.map(l => {
+    // Une ligne par lot et par lieu ; les pots remplis ne figurent que sur la première ligne du lot.
+    const stock = lots.flatMap(l => {
       const r = recById.get(l.recetteId), P = potsOf(l);
-      const parTaille = {};
-      TAILLES.forEach(t => { parTaille[`${t.pl} remplis`] = P[t.v].n; parTaille[`${t.pl} restants`] = P[t.v].r; });
-      return {
-        "N° de lot": num(l.numero) || "", "Parfum": l.nom || "", "Année": num(l.annee) || "", ...parTaille,
-        "Total remplis": TAILLES.reduce((a, t) => a + P[t.v].n, 0), "Total restants": TAILLES.reduce((a, t) => a + P[t.v].r, 0),
-        "Mise en pot": fmtDate(l.date), "Rangement": l.emplacement || "", "Provenance des fruits": l.provenance || "",
-        "Recette": r ? `${r.nom} (${r.annee})` : "", "Notes": l.notes || "", "Exemple": l.exemple ? "oui" : ""
-      };
+      return lieuxOf(l).map((x, i) => {
+        const row = { "N° de lot": num(l.numero) || "", "Parfum": l.nom || "", "Année": num(l.annee) || "", "Lieu de stockage": x.nom || "" };
+        TAILLES.forEach(t => { row[`${t.pl} restants`] = x.pots[t.v]; });
+        row["Total restants"] = lieuTotal(x);
+        TAILLES.forEach(t => { row[`${t.pl} remplis`] = i === 0 ? P[t.v].n : ""; });
+        row["Total remplis"] = i === 0 ? TAILLES.reduce((a, t) => a + P[t.v].n, 0) : "";
+        Object.assign(row, { "Mise en pot": fmtDate(l.date), "Provenance des fruits": l.provenance || "",
+          "Recette": r ? `${r.nom} (${r.annee})` : "", "Notes": l.notes || "", "Exemple": l.exemple ? "oui" : "" });
+        return row;
+      });
     });
     const recs = [...state.recettes].sort((a, b) => num(b.annee) - num(a.annee) || String(a.nom).localeCompare(b.nom, "fr")).map(r => ({
       "Nom": r.nom || "", "Année": num(r.annee) || "", "Fruits": r.fruits || "",
@@ -804,7 +967,7 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
     });
     resume.push({ "Taille": "Total", "Lots": state.lots.length, "Pots restants": resume.reduce((a, r) => a + r["Pots restants"], 0) });
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, sheet(stock, [9, 24, 7, 14, 15, 16, 17, 14, 15, 13, 14, 16, 24, 20, 28, 36, 8]), "Stock");
+    XLSX.utils.book_append_sheet(wb, sheet(stock, [9, 24, 7, 22, 14, 16, 14, 14, 13, 15, 13, 13, 16, 20, 28, 36, 8]), "Stock");
     XLSX.utils.book_append_sheet(wb, sheet(recs, [24, 7, 28, 10, 10, 15, 13, 11, 16, 44, 40, 8]), "Recettes");
     XLSX.utils.book_append_sheet(wb, sheet(resume, [12, 8, 14]), "Résumé");
     return XLSX.write(wb, { type: "array", bookType: "xlsx" });
@@ -1399,25 +1562,31 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
       etapes: cellStr(g(r, "Cuisson", "Préparation")), notes: cellStr(g(r, "Notes de l'année")),
       exemple: cellStr(g(r, "Exemple")) === "oui", modifie: new Date().toISOString(),
     }));
-    const lots = (sRows || []).filter(r => cellStr(g(r, "Parfum"))).map(r => {
-      const pots = {}; let perSize = false;
+    // Les lignes d'un même lot (même n°, parfum et année) sont regroupées : une ligne par lieu.
+    const groups = new Map();
+    (sRows || []).filter(r => cellStr(g(r, "Parfum"))).forEach((r, idx) => {
+      const numero = Math.round(num(g(r, "N° de lot"))) || null, nom = cellStr(g(r, "Parfum")), annee = num(g(r, "Année")) || THIS_YEAR;
+      const key = numero ? `${numero}|${annee}|${norm(nom)}` : `#${idx}`;
+      const pots = {}, nBy = {}; let perSize = false;
       TAILLES.forEach(t => {
-        const n = num(g(r, `${t.pl} remplis`)), rr = num(g(r, `${t.pl} restants`));
-        if (r[`${t.pl} remplis`] !== undefined) perSize = true;
-        pots[t.v] = { n: Math.max(n, rr), r: rr };
+        if (r[`${t.pl} restants`] !== undefined || r[`${t.pl} remplis`] !== undefined) perSize = true;
+        pots[t.v] = Math.max(0, Math.round(num(g(r, `${t.pl} restants`))));
+        nBy[t.v] = Math.max(0, Math.round(num(g(r, `${t.pl} remplis`))));
       });
       if (!perSize) { // ancien export : une taille par lot
         const tl = (TAILLES.find(t => norm(t.t) === norm(g(r, "Taille"))) || TAILLES[1]).v;
-        const rr = num(g(r, "Pots restants")); pots[tl] = { n: Math.max(rr, num(g(r, "Pots remplis"))), r: rr };
+        pots[tl] = Math.max(0, Math.round(num(g(r, "Pots restants")))); nBy[tl] = Math.max(0, Math.round(num(g(r, "Pots remplis"))));
       }
-      return {
-        numero: Math.round(num(g(r, "N° de lot"))) || null, nom: cellStr(g(r, "Parfum")), annee: num(g(r, "Année")) || THIS_YEAR,
-        date: parseMois(g(r, "Mise en pot", "Mis en pot le")), provenance: cellStr(g(r, "Provenance des fruits")).toUpperCase(),
-        emplacement: cellStr(g(r, "Rangement")), notes: cellStr(g(r, "Notes")), recetteNom: cellStr(g(r, "Recette")),
-        pots, nbPots: TAILLES.reduce((a, t) => a + pots[t.v].n, 0), restants: TAILLES.reduce((a, t) => a + pots[t.v].r, 0),
-        exemple: cellStr(g(r, "Exemple")) === "oui", modifie: new Date().toISOString(),
-      };
+      const lieu = { nom: cellStr(g(r, "Lieu de stockage", "Rangement")), pots };
+      if (!groups.has(key)) groups.set(key, {
+        head: { numero, nom, annee, date: parseMois(g(r, "Mise en pot", "Mis en pot le")), provenance: cellStr(g(r, "Provenance des fruits")).toUpperCase(),
+          notes: cellStr(g(r, "Notes")), recetteNom: cellStr(g(r, "Recette")), exemple: cellStr(g(r, "Exemple")) === "oui", modifie: new Date().toISOString() },
+        nBy: { petit: 0, standard: 0, grand: 0 }, lieux: [] });
+      const gr = groups.get(key);
+      TAILLES.forEach(t => { gr.nBy[t.v] = Math.max(gr.nBy[t.v], nBy[t.v]); });
+      gr.lieux.push(lieu);
     });
+    const lots = [...groups.values()].map(gr => ({ ...gr.head, ...lotBody(gr.nBy, gr.lieux) }));
     return { recettes, lots };
   }
   function importExcelForm(fileObj) {
@@ -1458,6 +1627,7 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
     });
   }
   document.addEventListener("change", (ev) => {
+    if (ev.target.id === "lieuSel") { state.lieu = ev.target.value; render(); return; }
     if (ev.target.id !== "sortSel") return;
     state.sort = ev.target.value; try { localStorage.setItem("cellier.sort", state.sort); } catch (e) {}
     render();
@@ -1546,7 +1716,31 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
     }
     const watchCard = `<div class="dcard"><h2>À surveiller</h2>${watch.length ? `<div>${watch.join("")}</div>` : `<div class="sub">Rien à signaler : aucun lot n'est presque fini.</div>`}${evo}</div>`;
 
-    return `<div class="dash">${kpis}<div class="dash-row">${lotBars}${donut}</div><div class="dash-row b">${vint}${watchCard}</div></div>`;
+    // Par lieu de stockage
+    const places = {};
+    rows.forEach(x => {
+      const L = lieuxOf(x.l);
+      L.forEach(li => {
+        const r = lieuTotal(li), k = lieuKey(li.nom);
+        if (!r && L.length > 1) return;
+        const pl = places[k] = places[k] || { nom: li.nom || "Lieu non indiqué", r: 0, lots: 0, sizes: { petit: 0, standard: 0, grand: 0 }, parfums: new Map(), low: 0 };
+        pl.r += r; pl.lots++; if (x.r > 0 && x.r <= 2 && r > 0) pl.low++;
+        TAILLES.forEach(t => { pl.sizes[t.v] += li.pots[t.v]; });
+        if (r > 0) { const pk = norm(x.l.nom); if (!pl.parfums.has(pk)) pl.parfums.set(pk, { nom: x.l.nom, r: 0 }); pl.parfums.get(pk).r += r; }
+      });
+    });
+    const plist = Object.entries(places).sort((a, b) => (a[0] === "_") - (b[0] === "_") || b[1].r - a[1].r);
+    const maxR = Math.max(1, ...plist.map(([, p]) => p.r));
+    const placesCard = `<div class="dcard"><h2>Par lieu de stockage</h2><div class="sub">Pots restants dans chaque lieu, par taille et par parfum</div>
+      <div class="places">${plist.map(([k, p]) => `<div class="place${k === "_" ? " none" : ""}">
+        <div class="pl-head"><b>${esc(p.nom)}</b><span class="pl-n">${p.r}<small> pot${p.r > 1 ? "s" : ""}</small></span></div>
+        <div class="lb-track" style="width:${Math.max(4, p.r / maxR * 100).toFixed(1)}%">${TAILLES.filter(t => p.sizes[t.v] > 0).map(t => `<span style="flex:${p.sizes[t.v]};background:${SIZE_COLOR[t.v]}"></span>`).join("") || `<span class="used" style="flex:1"></span>`}</div>
+        <span class="note">${TAILLES.filter(t => p.sizes[t.v] > 0).map(t => `${p.sizes[t.v]} ${(p.sizes[t.v] > 1 ? t.pl : t.t).toLowerCase()}`).join(" · ") || "aucun pot restant"} · ${p.lots} lot${p.lots > 1 ? "s" : ""}${p.low ? ` · <span class="pill low">${p.low} bientôt fini${p.low > 1 ? "s" : ""}</span>` : ""}</span>
+        ${p.parfums.size ? `<div class="pl-parfums">${[...p.parfums.values()].sort((a, b) => b.r - a.r).map(f => `<span class="pl-chip">${esc(f.nom)} <b>${f.r}</b></span>`).join("")}</div>` : ""}
+      </div>`).join("")}</div>
+      ${places._ ? `<span class="hint">Indiquez le lieu de stockage dans « Modifier » pour ranger les lots sans lieu.</span>` : ""}</div>`;
+
+    return `<div class="dash">${kpis}<div class="dash-row">${lotBars}${donut}</div>${placesCard}<div class="dash-row b">${vint}${watchCard}</div></div>`;
   }
 
   // ---------- Onglet Étiquettes ----------
