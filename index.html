@@ -28,6 +28,7 @@
   --accent-soft: #f3e2ea;
   --apricot: #d9822b;
   --apricot-soft: #fbead6;
+  --mure: #3b2a5c;
   --ok: #3f7a4a;
   --warn: #b5651d;
   --danger: #a3262f;
@@ -40,7 +41,7 @@
   :root:not([data-theme="light"]) {
     --bg: #1b1418; --paper: #251c21; --ink: #f2e8ed; --muted: #b29fa9; --line: #3d2f36;
     --accent: #e07aa6; --accent-ink: #1b1418; --accent-soft: #3a2230;
-    --apricot: #f0a65c; --apricot-soft: #3b2a1b;
+    --apricot: #f0a65c; --apricot-soft: #3b2a1b; --mure: #a897d8;
     --ok: #7fc28a; --warn: #f0a65c; --danger: #f07a82;
     color-scheme: dark;
   }
@@ -48,7 +49,7 @@
 :root[data-theme="dark"] {
   --bg: #1b1418; --paper: #251c21; --ink: #f2e8ed; --muted: #b29fa9; --line: #3d2f36;
   --accent: #e07aa6; --accent-ink: #1b1418; --accent-soft: #3a2230;
-  --apricot: #f0a65c; --apricot-soft: #3b2a1b;
+  --apricot: #f0a65c; --apricot-soft: #3b2a1b; --mure: #a897d8;
   --ok: #7fc28a; --warn: #f0a65c; --danger: #f07a82;
   color-scheme: dark;
 }
@@ -80,8 +81,11 @@ button { cursor: pointer; }
 
 /* Barre d'outils */
 .bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); padding-bottom: 12px; }
-.tabs { display: flex; gap: 4px; background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 4px; }
-.tab { border: 0; background: transparent; padding: 8px 18px; border-radius: 999px; font-weight: 500; color: var(--muted); }
+.tabs { display: flex; gap: 4px; background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 4px; overflow-x: auto; max-width: 100%; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.wrap { grid-template-columns: minmax(0, 1fr); }
+.wrap > *, .bar > * { min-width: 0; }
+.tab { white-space: nowrap; border: 0; background: transparent; padding: 8px 18px; border-radius: 999px; font-weight: 500; color: var(--muted); }
 .tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
 .tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .search { border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 8px 14px; min-width: 0; width: 210px; max-width: 100%; }
@@ -93,6 +97,75 @@ button { cursor: pointer; }
 .btn.ghost:hover { color: var(--accent); }
 .btn.danger { color: var(--danger); }
 .btn.danger.armed { background: var(--danger); color: var(--paper); border-color: var(--danger); }
+
+/* Tableau de bord */
+.dash { display: grid; gap: 16px; }
+.dash-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.dash-row { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 16px; }
+.dash-row.b { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+@media (max-width: 900px) { .dash-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dash-row, .dash-row.b { grid-template-columns: minmax(0, 1fr); } }
+.dcard { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); padding: 18px 20px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.dcard h2 { font-size: 21px; }
+.dcard .sub { color: var(--muted); font-size: 13px; margin-top: -6px; }
+.kpi .lab { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; }
+.kpi .big { font-family: var(--f-display); font-size: 42px; line-height: 1; font-variant-numeric: tabular-nums; }
+.kpi .big small { font-family: var(--f-mono); font-size: 15px; color: var(--muted); }
+.note { font-size: 13px; color: var(--muted); }
+.meter { display: block; height: 10px; border-radius: 5px; background: var(--line); overflow: hidden; }
+.meter span { display: block; height: 100%; background: var(--accent); border-radius: 5px; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.legend i, .d-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; }
+.lotbars { display: grid; gap: 12px; }
+.lotbar { display: grid; grid-template-columns: minmax(0, 13em) minmax(0, 1fr) 3.4em; gap: 6px 12px; align-items: center; }
+.lb-name { display: grid; min-width: 0; }
+.lb-name b { overflow-wrap: anywhere; }
+.lb-name span { font-size: 12px; color: var(--muted); }
+.lb-track { display: flex; height: 20px; border-radius: 4px; overflow: hidden; min-width: 6px; }
+.lb-track .used { background: var(--line); }
+.lb-n { font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-size: 14px; }
+@media (max-width: 560px) { .lotbar { grid-template-columns: minmax(0, 1fr) 3.4em; } .lb-name { grid-column: 1 / -1; } }
+.donut-row { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; }
+.donut-row svg { flex: 0 0 auto; max-width: 100%; }
+.d-big { font-family: var(--f-display); font-size: 36px; fill: var(--ink); }
+.d-small { font-size: 12px; fill: var(--muted); }
+.d-legend { display: grid; gap: 12px; flex: 1; min-width: 160px; }
+.d-legend div { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 4px; }
+.d-legend i { margin-top: 5px; }
+.d-legend small { display: block; font-size: 12px; color: var(--muted); }
+.d-legend b { font-family: var(--f-mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+.vintages { display: grid; gap: 18px; }
+.vint { display: grid; gap: 6px; }
+.v-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.v-year { font-family: var(--f-display); font-size: 26px; color: var(--accent); }
+.v-n { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.alert { display: grid; grid-template-columns: 6px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.alert:first-child { border-top: 0; padding-top: 0; }
+.alert .bar { align-self: stretch; border-radius: 3px; }
+.alert .meta { color: var(--muted); font-size: 13px; }
+.alert .v { font-family: var(--f-mono); font-size: 20px; }
+.pill.old { background: var(--accent-soft); color: var(--accent); }
+.recipe-evo { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 10px; align-items: center; }
+.yr { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: grid; gap: 4px; justify-items: start; }
+.yr .s { font-family: var(--f-mono); font-size: 22px; }
+.arrow { color: var(--muted); font-size: 22px; }
+/* Onglet Étiquettes */
+.etq { display: grid; gap: 28px; }
+.etq-sec { display: grid; gap: 14px; }
+.sec-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; }
+.sec-head h2 { font-size: 26px; }
+.tplgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+.tplcard { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.tplcard .thumb { display: grid; place-items: center; background: var(--bg); border-radius: 8px; padding: 12px 8px; }
+.tplcard canvas { box-shadow: 0 1px 4px rgba(0, 0, 0, .18); border-radius: 3px; max-width: 100%; }
+.tplcard canvas.round { border-radius: 50%; }
+.tpl-info { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+.tpl-info .hint { flex-basis: 100%; }
+.lotlist { display: grid; gap: 8px; }
+.lotrow { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.lotrow > div { display: grid; min-width: 0; }
+.sortby { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+.sortby select { border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; background: var(--paper); color: var(--ink); }
+label.btn { display: inline-flex; align-items: center; cursor: pointer; }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
 
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -245,7 +318,6 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
 .local-card h2 { font-size: 22px; }
 .local-card p { margin: 0; color: var(--muted); }
 .local-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
-label.btn { display: inline-flex; align-items: center; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -267,12 +339,16 @@ label.btn { display: inline-flex; align-items: center; cursor: pointer; }
 
   <div class="bar">
     <div class="tabs" role="tablist">
-      <button class="tab" role="tab" id="tab-cellier" aria-selected="true" data-view="cellier">Cellier</button>
+      <button class="tab" role="tab" id="tab-tableau" aria-selected="true" data-view="dashboard">Tableau de bord</button>
+      <button class="tab" role="tab" id="tab-cellier" aria-selected="false" data-view="cellier">Cellier</button>
       <button class="tab" role="tab" id="tab-carnet" aria-selected="false" data-view="carnet">Carnet de recettes</button>
+      <button class="tab" role="tab" id="tab-etiquettes" aria-selected="false" data-view="etiquettes">Étiquettes</button>
     </div>
     <div class="tools">
       <input class="search" id="q" type="search" placeholder="Chercher un fruit, un parfum…" aria-label="Rechercher">
       <button class="btn" id="exportBtn" hidden>Exporter en Excel</button>
+      <label class="btn" id="importBtn" for="importInput" role="button" tabindex="0" hidden>Importer Excel</label>
+      <input type="file" id="importInput" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
       <button class="btn primary" id="addBtn">+ Nouveau lot</button>
     </div>
   </div>
@@ -291,7 +367,7 @@ label.btn { display: inline-flex; align-items: center; cursor: pointer; }
 <script>
 (() => {
   const THIS_YEAR = new Date().getFullYear();
-  const state = { view: "cellier", year: "all", taille: "all", q: "", recettes: [], lots: [], ready: { r: false, l: false } };
+  const state = { view: "dashboard", year: "all", taille: "all", sort: "numero", q: "", recettes: [], lots: [], ready: { r: false, l: false } };
   const TAILLES = [
     { v: "petit", t: "Petit", pl: "Petits", g: 250 },
     { v: "standard", t: "Standard", pl: "Standards", g: 370 },
@@ -317,7 +393,14 @@ label.btn { display: inline-flex; align-items: center; cursor: pointer; }
     return out;
   }
   const lotTitle = (l) => (l.numero ? `${l.numero} - ` : "") + (l.nom || "Sans nom");
-  function nextNumero() { return state.lots.reduce((m, l) => Math.max(m, num(l.numero)), 0) + 1; }
+  // Numéros de lot : uniques pour une même année (on peut avoir un lot 1 en 2025 et un lot 1 en 2026).
+  function nextNumero(annee) { return state.lots.filter(l => num(l.annee) === num(annee)).reduce((m, l) => Math.max(m, num(l.numero)), 0) + 1; }
+  const totRestants = (l) => { const P = potsOf(l); return TAILLES.reduce((a, t) => a + P[t.v].r, 0); };
+  const SORTS = {
+    numero: (a, b) => (num(a.numero) || 1e9) - (num(b.numero) || 1e9) || num(b.annee) - num(a.annee) || String(a.nom).localeCompare(b.nom, "fr"),
+    alpha: (a, b) => String(a.nom).localeCompare(b.nom, "fr", { sensitivity: "base" }) || num(b.annee) - num(a.annee) || num(a.numero) - num(b.numero),
+    restants: (a, b) => totRestants(b) - totRestants(a) || (num(a.numero) || 1e9) - (num(b.numero) || 1e9),
+  };
   let db = null, canWrite = true;
 
   const $ = (s, el = document) => el.querySelector(s);
@@ -325,9 +408,10 @@ label.btn { display: inline-flex; align-items: center; cursor: pointer; }
   const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
   const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 
-  try { const v = localStorage.getItem("cellier.view"); if (v === "carnet" || v === "cellier") state.view = v; } catch (e) {}
-  if (location.hash === "#carnet") state.view = "carnet";
-  if (location.hash === "#cellier") state.view = "cellier";
+  const VIEWS = ["dashboard", "cellier", "carnet", "etiquettes"];
+  try { const v = localStorage.getItem("cellier.view"); if (VIEWS.includes(v)) state.view = v; } catch (e) {}
+  const HASH = { "#tableau": "dashboard", "#cellier": "cellier", "#carnet": "carnet", "#etiquettes": "etiquettes" };
+  if (HASH[location.hash]) state.view = HASH[location.hash];
 
   function toast(msg) {
     const t = $("#toast"); t.textContent = msg; t.hidden = false;
@@ -355,7 +439,8 @@ label.btn { display: inline-flex; align-items: center; cursor: pointer; }
   }
 
   function renderYears() {
-    const src = state.view === "cellier" ? state.lots : state.recettes;
+    if (state.view === "dashboard") { $("#years").innerHTML = ""; return; }
+    const src = state.view === "carnet" ? state.recettes : state.lots;
     const years = [...new Set(src.map(x => num(x.annee)).filter(Boolean))].sort((a, b) => b - a);
     if (state.year !== "all" && !years.includes(num(state.year))) state.year = "all";
     const el = $("#years");
@@ -408,7 +493,7 @@ label.btn { display: inline-flex; align-items: center; cursor: pointer; }
   function renderCellier() {
     const base = state.lots.filter(l => (state.year === "all" || String(l.annee) === String(state.year)) && matches(l, ["numero", "nom", "emplacement", "provenance", "notes"]));
     let lots = base.filter(l => state.taille === "all" || potsOf(l)[state.taille].n > 0);
-    lots.sort((a, b) => (num(b.restants) > 0) - (num(a.restants) > 0) || num(b.annee) - num(a.annee) || String(a.nom).localeCompare(b.nom, "fr"));
+    lots.sort(SORTS[state.sort] || SORTS.numero);
     if (!state.ready.l) return `<div class="empty"><h3>Ouverture du cellier…</h3><p>Vos lots de pots vont apparaître ici.</p></div>`;
     if (!state.lots.length) return `<div class="empty"><h3>Le cellier est vide</h3><p>Ajoutez votre premier lot : le parfum, l'année et le nombre de pots remplis.</p><button class="btn primary" data-act="new-lot">+ Nouveau lot</button></div>`;
     const parTaille = TAILLES.map(t => ({ ...t, n: base.reduce((a, l) => a + potsOf(l)[t.v].r, 0) }));
@@ -419,6 +504,9 @@ label.btn { display: inline-flex; align-items: center; cursor: pointer; }
         <button class="chip" data-taille="all" aria-pressed="${state.taille === "all"}">Toutes tailles</button>
         ${TAILLES.map(t => `<button class="chip" data-taille="${t.v}" aria-pressed="${state.taille === t.v}">${t.pl}</button>`).join("")}
       </span>
+      <label class="sortby" for="sortSel"><span>Trier par</span>
+        <select id="sortSel">${[["numero", "N° de lot"], ["alpha", "Ordre alphabétique"], ["restants", "Pots restants"]].map(([v, t]) => `<option value="${v}" ${state.sort === v ? "selected" : ""}>${t}</option>`).join("")}</select>
+      </label>
     </div>`;
     if (!lots.length) return sizes + `<div class="empty"><p>Aucun lot ne correspond à cette recherche.</p></div>`;
     return sizes + `<div class="grid">${lots.map(lotCard).join("")}</div>`;
@@ -471,10 +559,18 @@ label.btn { display: inline-flex; align-items: center; cursor: pointer; }
 
   function render() {
     document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.view === state.view)));
-    $("#addBtn").textContent = state.view === "cellier" ? "+ Nouveau lot" : "+ Nouvelle recette";
+    const v = state.view;
+    $("#addBtn").textContent = v === "carnet" ? "+ Nouvelle recette" : "+ Nouveau lot";
+    $("#addBtn").hidden = v === "etiquettes";
     $("#addBtn").disabled = !canWrite;
+    $("#q").hidden = v === "dashboard";
+    $("#stats").hidden = v === "dashboard";
     renderStats(); renderYears();
-    $("#view").innerHTML = state.view === "cellier" ? renderCellier() : `<div style="display:grid;gap:32px">${renderCarnet()}</div>`;
+    $("#view").innerHTML = v === "dashboard" ? renderDashboard()
+      : v === "etiquettes" ? renderEtiquettes()
+      : v === "cellier" ? renderCellier()
+      : `<div style="display:grid;gap:32px">${renderCarnet()}</div>`;
+    if (v === "etiquettes") drawThumbs();
   }
 
   // ---------- Formulaires ----------
@@ -541,7 +637,7 @@ label.btn { display: inline-flex; align-items: center; cursor: pointer; }
           <input id="f_n_${t.v}" name="f_n_${t.v}" type="number" min="0" value="${P0[t.v].n}">
           ${isEdit ? `<input id="f_r_${t.v}" name="f_r_${t.v}" type="number" min="0" value="${P0[t.v].r}" aria-label="${t.t} : pots restants">` : ""}`).join("")}
       </div><span class="hint" id="f_tot"></span></div>`;
-    if (!isEdit && !d.numero) d.numero = nextNumero();
+    if (!isEdit && !d.numero) d.numero = nextNumero(d.annee);
     openForm(isEdit ? "Modifier le lot" : "Nouveau lot de pots", [
       field("f_num", "N° de lot", d.numero, { type: "number", min: 1, hint: isEdit ? "" : "Proposé automatiquement." }),
       field("f_nom", "Parfum", d.nom, { required: true, ph: "Abricot-lavande" }),
@@ -561,8 +657,9 @@ label.btn { display: inline-flex; align-items: center; cursor: pointer; }
     ].join(""), async (f) => {
       if (!f.f_nom.trim()) throw { message: "Indiquez le parfum." };
       const numero = Math.round(num(f.f_num)) || null;
-      const pris = numero && state.lots.find(o => o.id !== l.id && num(o.numero) === numero);
-      if (pris) throw { message: `Le n° ${numero} est déjà pris par « ${pris.nom} ». Choisissez-en un autre.` };
+      const anneeLot = num(f.f_annee) || THIS_YEAR;
+      const pris = numero && state.lots.find(o => o.id !== l.id && num(o.numero) === numero && num(o.annee) === anneeLot);
+      if (pris) throw { message: `Le lot n° ${numero} existe déjà pour ${anneeLot} (« ${pris.nom} »). Le prochain numéro libre est ${nextNumero(anneeLot)}.` };
       const body = {
         numero, nom: f.f_nom.trim(), annee: num(f.f_annee) || THIS_YEAR, date: f.f_mois && num(f.f_dan) ? `${Math.round(num(f.f_dan))}-${f.f_mois}` : "",
         provenance: (f.f_prov || "").trim().toUpperCase(),
@@ -587,7 +684,14 @@ label.btn { display: inline-flex; align-items: center; cursor: pointer; }
       const r = isEdit ? TAILLES.reduce((a, t) => a + Math.max(0, num((gf("f_r_" + t.v) || {}).value)), 0) : n;
       gf("f_tot").textContent = isEdit ? `Total : ${r} restants sur ${n} pots remplis.` : `Total : ${n} pot${n > 1 ? "s" : ""}.`;
     };
-    frm.oninput = tot; tot();
+    let numTouched = isEdit;
+    frm.oninput = (ev) => {
+      const id = ev && ev.target ? ev.target.id : "";
+      if (id === "f_num") numTouched = true;
+      if (id === "f_annee" && !numTouched && num(ev.target.value) > 1900) gf("f_num").value = nextNumero(num(ev.target.value));
+      tot();
+    };
+    tot();
   }
 
   function recipeForm(r = {}, opts = {}) {
@@ -628,7 +732,7 @@ label.btn { display: inline-flex; align-items: center; cursor: pointer; }
     const chip = ev.target.closest(".chip");
     if (chip && chip.dataset.taille) { state.taille = chip.dataset.taille; render(); return; }
     if (chip && chip.dataset.year) { state.year = chip.dataset.year; render(); return; }
-    if (ev.target.closest("#addBtn")) { if (!db) return; state.view === "cellier" ? lotForm() : recipeForm(); return; }
+    if (ev.target.closest("#addBtn")) { if (!db) return; state.view === "carnet" ? recipeForm() : lotForm(); return; }
 
     const b = ev.target.closest("[data-act]"); if (!b) return;
     const act = b.dataset.act;
@@ -640,6 +744,8 @@ label.btn { display: inline-flex; align-items: center; cursor: pointer; }
     if (act === "new-recipe" && db) return recipeForm();
     if (act === "edit-lot" && lot) return lotForm(lot);
     if (act === "labels" && lot) return labelForm(lot);
+    if (act === "tpl-new") return tplEditor(null, sampleLot(), () => render());
+    if (act === "tpl-edit") { const t = (state.modeles || []).find(x => x.id === b.dataset.tpl); if (t) return tplEditor(t, sampleLot(), () => render()); return; }
     if (act === "edit-recipe" && rec) return recipeForm(rec);
     if (act === "redo" && rec) return recipeForm(rec, { copy: true });
     if (act === "lot-from" && rec) return lotForm({}, { nom: rec.nom, annee: num(rec.annee) || THIS_YEAR, recetteId: rec.id, nbPots: num(rec.rendement) || 6, provenance: "" });
@@ -723,6 +829,7 @@ label.btn { display: inline-flex; align-items: center; cursor: pointer; }
     if (!window.claude || typeof window.claude.use !== "function") return;
     try { downloads = await window.claude.use("downloads"); } catch (e) { downloads = null; }
     $("#exportBtn").hidden = !(downloads && window.XLSX);
+    $("#importBtn").hidden = !window.XLSX || !canWrite;
   })();
 
   // ---------- Étiquettes ----------
@@ -950,7 +1057,7 @@ label.btn { display: inline-flex; align-items: center; cursor: pointer; }
     return "L'image n'a pas pu être envoyée. Réessayez dans un instant.";
   }
 
-  function tplEditor(tpl, lot) {
+  function tplEditor(tpl, lot, onBack) {
     const rec = lot.recetteId && state.recettes.find(r => r.id === lot.recetteId);
     const isEdit = !!(tpl && tpl.id);
     const t = JSON.parse(JSON.stringify(tpl || {}));
@@ -962,7 +1069,7 @@ label.btn { display: inline-flex; align-items: center; cursor: pointer; }
       { k: "date", x: 0.1, y: 0.7, w: 0.8, size: 2.2, fam: "sans", bold: false, italic: false, align: "center", color: "#3a2a33", lignes: 1, avant: "" },
     ];
     let file = null, entry = t.assetId ? getImg(t.assetId) : null, sel = -1, stageK = 1, stageF = fmtById(t.format);
-    const back = () => setTimeout(() => labelForm(lot), 0);
+    const back = () => setTimeout(() => (onBack ? onBack() : labelForm(lot)), 0);
 
     openForm(isEdit ? `Modifier le modèle « ${t.nom || ""} »` : "Importer un modèle d'étiquette", [
       field("t_nom", "Nom du modèle", t.nom, { required: true, ph: "Étiquette kraft" }),
@@ -1267,6 +1374,221 @@ label.btn { display: inline-flex; align-items: center; cursor: pointer; }
     loadLabelFonts().then(preview);
   }
 
+  // ---------- Import d'un fichier Excel exporté par l'application ----------
+  function cellStr(v) { return v == null ? "" : (v instanceof Date ? v.toISOString() : String(v)).trim(); }
+  function parseMois(v) {
+    if (v instanceof Date && !isNaN(v)) return `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, "0")}`;
+    const s = cellStr(v); if (!s) return "";
+    let m = /^(\d{4})-(\d{2})/.exec(s); if (m) return `${m[1]}-${m[2]}`;
+    m = /^(\d{1,2})[./](\d{1,2})[./](\d{4})$/.exec(s); if (m) return `${m[3]}-${m[2].padStart(2, "0")}`;
+    const n = norm(s), y = /(\d{4})/.exec(s);
+    const i = MOIS.findIndex(x => n.includes(norm(x)));
+    return i >= 0 && y ? `${y[1]}-${String(i + 1).padStart(2, "0")}` : "";
+  }
+  function readExcel(buf) {
+    const wb = XLSX.read(buf, { type: "array", cellDates: true });
+    const rows = (name) => { const ws = wb.Sheets[name]; return ws ? XLSX.utils.sheet_to_json(ws, { defval: "" }) : null; };
+    const rRows = rows("Recettes"), sRows = rows("Stock");
+    if (!rRows && !sRows) throw { message: "Ce fichier n'a pas de feuille « Stock » ni « Recettes ». Choisissez un fichier exporté par l'application." };
+    const g = (row, ...keys) => { for (const k of keys) if (row[k] !== undefined && row[k] !== "") return row[k]; return ""; };
+    const recettes = (rRows || []).filter(r => cellStr(g(r, "Nom"))).map(r => ({
+      nom: cellStr(g(r, "Nom")), annee: num(g(r, "Année")) || THIS_YEAR, fruits: cellStr(g(r, "Fruits")),
+      fruitsG: num(g(r, "Fruits (g)")) || null, sucreG: num(g(r, "Sucre (g)")) || null,
+      cuisson: num(g(r, "Durée de cuisson (min)", "Cuisson (min)")) || null, rendement: num(g(r, "Pots prévus")) || null,
+      note: num(g(r, "Appréciation (/5)")) || null, ingredients: cellStr(g(r, "Ingrédients")),
+      etapes: cellStr(g(r, "Cuisson", "Préparation")), notes: cellStr(g(r, "Notes de l'année")),
+      exemple: cellStr(g(r, "Exemple")) === "oui", modifie: new Date().toISOString(),
+    }));
+    const lots = (sRows || []).filter(r => cellStr(g(r, "Parfum"))).map(r => {
+      const pots = {}; let perSize = false;
+      TAILLES.forEach(t => {
+        const n = num(g(r, `${t.pl} remplis`)), rr = num(g(r, `${t.pl} restants`));
+        if (r[`${t.pl} remplis`] !== undefined) perSize = true;
+        pots[t.v] = { n: Math.max(n, rr), r: rr };
+      });
+      if (!perSize) { // ancien export : une taille par lot
+        const tl = (TAILLES.find(t => norm(t.t) === norm(g(r, "Taille"))) || TAILLES[1]).v;
+        const rr = num(g(r, "Pots restants")); pots[tl] = { n: Math.max(rr, num(g(r, "Pots remplis"))), r: rr };
+      }
+      return {
+        numero: Math.round(num(g(r, "N° de lot"))) || null, nom: cellStr(g(r, "Parfum")), annee: num(g(r, "Année")) || THIS_YEAR,
+        date: parseMois(g(r, "Mise en pot", "Mis en pot le")), provenance: cellStr(g(r, "Provenance des fruits")).toUpperCase(),
+        emplacement: cellStr(g(r, "Rangement")), notes: cellStr(g(r, "Notes")), recetteNom: cellStr(g(r, "Recette")),
+        pots, nbPots: TAILLES.reduce((a, t) => a + pots[t.v].n, 0), restants: TAILLES.reduce((a, t) => a + pots[t.v].r, 0),
+        exemple: cellStr(g(r, "Exemple")) === "oui", modifie: new Date().toISOString(),
+      };
+    });
+    return { recettes, lots };
+  }
+  function importExcelForm(fileObj) {
+    fileObj.arrayBuffer().then((buf) => {
+      let data;
+      try { data = readExcel(buf); }
+      catch (e) { openForm("Import impossible", `<div class="field wide"><p class="err">${esc((e && e.message) || "Ce fichier n'a pas pu être lu. Choisissez un fichier .xlsx exporté par l'application.")}</p></div>`, async () => "Aucune donnée modifiée", null, "OK"); return; }
+      const has = state.lots.length + state.recettes.length;
+      openForm("Importer un fichier Excel", [
+        `<div class="field wide"><p>Le fichier <b>${esc(fileObj.name)}</b> contient <b>${data.lots.length}</b> lot${data.lots.length > 1 ? "s" : ""} et <b>${data.recettes.length}</b> recette${data.recettes.length > 1 ? "s" : ""}.</p>
+          <span class="hint">Les modèles d'étiquettes et leurs images ne sont pas dans le fichier Excel : ils ne sont pas concernés par l'import.</span></div>`,
+        field("i_mode", "Que faire de ce qui est déjà enregistré ?", has ? "remplacer" : "ajouter", { type: "select", wide: true, options: [
+          { v: "remplacer", t: `Remplacer : effacer les ${state.lots.length} lots et ${state.recettes.length} recettes actuels` },
+          { v: "ajouter", t: "Ajouter : garder l'existant et ajouter le contenu du fichier" },
+        ] }),
+      ].join(""), async (f) => {
+        if (!db || !canWrite) throw { message: "Vous ne pouvez pas modifier ce cellier." };
+        if (f.i_mode === "remplacer") {
+          for (const l of [...state.lots]) await db.collection("lots").doc(l.id).delete();
+          for (const r of [...state.recettes]) await db.collection("recettes").doc(r.id).delete();
+        }
+        const byName = new Map();
+        for (const r of data.recettes) { const ref = db.collection("recettes").doc(); await ref.set(r); byName.set(norm(`${r.nom} (${r.annee})`), ref.id); }
+        if (f.i_mode === "ajouter") state.recettes.forEach(r => { const k = norm(`${r.nom} (${r.annee})`); if (!byName.has(k)) byName.set(k, r.id); });
+        // Numéros déjà pris, par année (« 2026:23 »).
+        const key = (an, n) => `${num(an)}:${num(n)}`;
+        const taken = new Set(f.i_mode === "ajouter" ? state.lots.filter(l => num(l.numero)).map(l => key(l.annee, l.numero)) : []);
+        const maxFor = (an) => Math.max(0, ...[...taken].filter(k => k.startsWith(num(an) + ":")).map(k => num(k.split(":")[1])), ...data.lots.filter(l => num(l.annee) === num(an)).map(l => num(l.numero)));
+        for (const l of data.lots) {
+          const { recetteNom, ...body } = l;
+          body.recetteId = byName.get(norm(recetteNom)) || "";
+          if (!body.numero || taken.has(key(body.annee, body.numero))) body.numero = maxFor(body.annee) + 1;
+          taken.add(key(body.annee, body.numero));
+          await db.collection("lots").add(body);
+        }
+        return `${data.lots.length} lots et ${data.recettes.length} recettes importés`;
+      }, null, "Importer");
+    });
+  }
+  document.addEventListener("change", (ev) => {
+    if (ev.target.id !== "sortSel") return;
+    state.sort = ev.target.value; try { localStorage.setItem("cellier.sort", state.sort); } catch (e) {}
+    render();
+  });
+  try { const s = localStorage.getItem("cellier.sort"); if (s && SORTS[s]) state.sort = s; } catch (e) {}
+  $("#importInput").addEventListener("change", (ev) => {
+    const fl = ev.target.files && ev.target.files[0]; ev.target.value = "";
+    if (!fl) return;
+    if (!window.XLSX) { toast("Le module Excel n'a pas pu se charger. Vérifiez la connexion et réessayez."); return; }
+    importExcelForm(fl);
+  });
+
+  // ---------- Tableau de bord ----------
+  const SIZE_COLOR = { petit: "var(--apricot)", standard: "var(--accent)", grand: "var(--mure)" };
+  const pctOf = (a, b) => (b > 0 ? Math.round(a / b * 100) : 0);
+  function moisAnnee(l) { return l.date ? fmtDate(l.date) : String(l.annee || ""); }
+  function renderDashboard() {
+    if (!state.ready.l) return `<div class="empty"><h3>Ouverture du cellier…</h3><p>Le tableau de bord va apparaître ici.</p></div>`;
+    if (!state.lots.length) return `<div class="empty"><h3>Rien à afficher pour l'instant</h3><p>Ajoutez votre premier lot de pots : le tableau de bord se remplira tout seul.</p><button class="btn primary" data-act="new-lot">+ Nouveau lot</button></div>`;
+    const rows = state.lots.map(l => { const p = potsOf(l); return { l, p, r: TAILLES.reduce((a, t) => a + p[t.v].r, 0), n: TAILLES.reduce((a, t) => a + p[t.v].n, 0) }; });
+    const R = rows.reduce((a, x) => a + x.r, 0), N = rows.reduce((a, x) => a + x.n, 0);
+    const actifs = rows.filter(x => x.r > 0), low = actifs.filter(x => x.r <= 2), out = rows.filter(x => x.r === 0 && x.n > 0);
+    const parfums = [...new Map(actifs.map(x => [norm(x.l.nom), x.l.nom])).values()];
+    const years = {}; rows.forEach(x => { const y = num(x.l.annee) || 0; years[y] = years[y] || { r: 0, n: 0, c: 0 }; years[y].r += x.r; years[y].n += x.n; years[y].c++; });
+    const yKeys = Object.keys(years).map(Number).sort((a, b) => b - a);
+    const sizes = TAILLES.map(t => ({ ...t, r: rows.reduce((a, x) => a + x.p[t.v].r, 0), n: rows.reduce((a, x) => a + x.p[t.v].n, 0) }));
+
+    const kpis = `<div class="dash-kpis">
+      <div class="dcard kpi"><span class="lab">Pots en réserve</span><span class="big">${R} <small>/ ${N} remplis</small></span>
+        <span class="meter"><span style="width:${pctOf(R, N)}%"></span></span>
+        <span class="note">${pctOf(R, N)} % encore au cellier · ${N - R} pot${N - R > 1 ? "s" : ""} parti${N - R > 1 ? "s" : ""}</span></div>
+      <div class="dcard kpi"><span class="lab">Lots en cours</span><span class="big">${actifs.length}</span>
+        <span class="note">${low.length ? `dont <span class="pill low">${low.length} bientôt fini${low.length > 1 ? "s" : ""}</span>` : "aucun bientôt fini"} · ${out.length ? `${out.length} épuisé${out.length > 1 ? "s" : ""}` : "aucun épuisé"}</span></div>
+      <div class="dcard kpi"><span class="lab">Parfums disponibles</span><span class="big">${parfums.length}</span>
+        <span class="note">${esc(parfums.slice(0, 6).join(", "))}${parfums.length > 6 ? "…" : ""}</span></div>
+      <div class="dcard kpi"><span class="lab">Millésimes</span><span class="big">${yKeys.filter(Boolean).length}</span>
+        <span class="note">${yKeys.filter(Boolean).slice(0, 3).map(y => `${y} : ${years[y].r} pots`).join(" · ")}</span></div>
+    </div>`;
+
+    const maxN = Math.max(1, ...rows.map(x => x.n));
+    const sorted = [...rows].sort((a, b) => b.r - a.r || (num(a.l.numero) || 1e9) - (num(b.l.numero) || 1e9));
+    const shown = sorted.slice(0, 12);
+    const lotBars = `<div class="dcard"><h2>Réserve par lot</h2><div class="sub">Pots restants par taille · partie claire = pots déjà partis</div>
+      <div class="legend">${TAILLES.map(t => `<span><i style="background:${SIZE_COLOR[t.v]}"></i>${t.t}</span>`).join("")}</div>
+      <div class="lotbars">${shown.map(x => `<div class="lotbar">
+        <div class="lb-name"><b>${esc(lotTitle(x.l))}</b><span>${esc(moisAnnee(x.l))}${x.l.provenance ? " · " + esc(x.l.provenance) : ""}</span></div>
+        <div class="lb-track" style="width:${(x.n / maxN * 100).toFixed(1)}%" role="img" aria-label="${x.r} pots restants sur ${x.n}">
+          ${TAILLES.filter(t => x.p[t.v].r > 0).map(t => `<span style="flex:${x.p[t.v].r};background:${SIZE_COLOR[t.v]}"></span>`).join("")}
+          ${x.n - x.r > 0 ? `<span class="used" style="flex:${x.n - x.r}"></span>` : ""}
+        </div>
+        <span class="lb-n">${x.r}/${x.n}</span></div>`).join("")}</div>
+      ${sorted.length > shown.length ? `<div class="sub">et ${sorted.length - shown.length} autre${sorted.length - shown.length > 1 ? "s" : ""} lot${sorted.length - shown.length > 1 ? "s" : ""} (voir le Cellier)</div>` : ""}</div>`;
+
+    const C = 2 * Math.PI * 70; let acc = 0;
+    const arcs = sizes.filter(s => s.r > 0).map(s => { const len = s.r / Math.max(1, R) * C, gap = sizes.filter(z => z.r > 0).length > 1 ? 2 : 0; const a = `<circle r="70" stroke="${SIZE_COLOR[s.v]}" stroke-dasharray="${Math.max(0, len - gap).toFixed(1)} ${(C - len + gap).toFixed(1)}" stroke-dashoffset="${(-acc).toFixed(1)}"/>`; acc += len; return a; }).join("");
+    const donut = `<div class="dcard"><h2>Par taille de pot</h2><div class="sub">${R} pot${R > 1 ? "s" : ""} en réserve</div>
+      <div class="donut-row"><svg viewBox="0 0 180 180" width="150" height="150" role="img" aria-label="Répartition des pots restants par taille">
+        <circle cx="90" cy="90" r="70" fill="none" stroke="var(--line)" stroke-width="24"/>
+        <g transform="translate(90 90) rotate(-90)" fill="none" stroke-width="24">${arcs}</g>
+        <text x="90" y="92" text-anchor="middle" class="d-big">${R}</text><text x="90" y="114" text-anchor="middle" class="d-small">pots</text></svg>
+        <div class="d-legend">${[...sizes].sort((a, b) => b.r - a.r).map(s => `<div><i style="background:${SIZE_COLOR[s.v]}"></i><span>${s.t}<small>sur ${s.n} rempli${s.n > 1 ? "s" : ""}</small></span><b>${s.r}</b></div>`).join("")}</div>
+      </div></div>`;
+
+    const vint = `<div class="dcard"><h2>Par millésime</h2><div class="sub">Pots restants sur pots remplis</div>
+      <div class="vintages">${yKeys.map(y => `<div class="vint"><div class="v-top"><span class="v-year">${y || "Sans année"}</span><span class="v-n">${years[y].r} / ${years[y].n}</span></div>
+        <span class="meter"><span style="width:${pctOf(years[y].r, years[y].n)}%"></span></span>
+        <span class="note">${pctOf(years[y].r, years[y].n)} % en réserve · ${years[y].c} lot${years[y].c > 1 ? "s" : ""}</span></div>`).join("")}</div></div>`;
+
+    const watch = [];
+    low.sort((a, b) => a.r - b.r).slice(0, 4).forEach(x => {
+      const tl = TAILLES.filter(t => x.p[t.v].r > 0).map(t => t.pl.toLowerCase()).join(", ");
+      watch.push(`<div class="alert" data-lot="${esc(x.l.id)}"><span class="bar" style="background:var(--apricot)"></span><div><b>${esc(lotTitle(x.l))}</b> <span class="pill low">Bientôt fini</span><div class="meta">${tl ? tl.charAt(0).toUpperCase() + tl.slice(1) + " · " : ""}plus que ${x.r} sur ${x.n}</div></div><span class="v">${x.r}</span></div>`);
+    });
+    const dkey = (l) => (/^\d{4}-\d{2}/.test(l.date || "") ? l.date.slice(0, 7) : `${l.annee || 9999}-99`);
+    const oldest = [...actifs].sort((a, b) => dkey(a.l).localeCompare(dkey(b.l)))[0];
+    if (oldest && actifs.length > 1 && !low.slice(0, 4).includes(oldest)) watch.push(`<div class="alert"><span class="bar" style="background:var(--accent)"></span><div><b>${esc(lotTitle(oldest.l))}</b> <span class="pill old">Plus ancien</span><div class="meta">${esc(moisAnnee(oldest.l))} · à ouvrir en premier</div></div><span class="v">${oldest.r}</span></div>`);
+    // Évolution d'une recette faite plusieurs années
+    const groups = {}; state.recettes.forEach(r => { (groups[norm(r.nom)] = groups[norm(r.nom)] || []).push(r); });
+    const multi = Object.values(groups).filter(g => g.length > 1).map(g => g.sort((a, b) => num(a.annee) - num(b.annee))).sort((a, b) => num(b[b.length - 1].annee) - num(a[a.length - 1].annee))[0];
+    let evo = "";
+    if (multi) {
+      const [p, q] = multi.slice(-2), rp = ratio(p), rq = ratio(q);
+      const yr = (r, rt) => `<div class="yr"><span class="vintage">${esc(r.annee)}</span><span class="s">${rt != null ? rt + " %" : "—"}</span><span class="note">sucre / fruit</span>${r.note ? `<span class="stars">${stars(r.note)}</span>` : ""}</div>`;
+      const phr = [rp != null && rq != null && rq !== rp ? (rq < rp ? "moins sucrée" : "plus sucrée") : "", num(q.note) && num(p.note) && q.note !== p.note ? (q.note > p.note ? "mieux notée" : "moins bien notée") : ""].filter(Boolean).join(", et ");
+      evo = `<div class="recipe-evo">${yr(p, rp)}<span class="arrow" aria-hidden="true">→</span>${yr(q, rq)}</div><div class="sub">${esc(q.nom)}${phr ? ` : ${phr} en ${esc(q.annee)}.` : ` : ${esc(p.annee)} et ${esc(q.annee)}.`}</div>`;
+    }
+    const watchCard = `<div class="dcard"><h2>À surveiller</h2>${watch.length ? `<div>${watch.join("")}</div>` : `<div class="sub">Rien à signaler : aucun lot n'est presque fini.</div>`}${evo}</div>`;
+
+    return `<div class="dash">${kpis}<div class="dash-row">${lotBars}${donut}</div><div class="dash-row b">${vint}${watchCard}</div></div>`;
+  }
+
+  // ---------- Onglet Étiquettes ----------
+  const SAMPLE_LOT = { numero: 1, nom: "Abricot-lavande", annee: THIS_YEAR, date: `${THIS_YEAR}-07`, provenance: "PARIS", pots: { standard: { n: 6, r: 6 } } };
+  function sampleLot() { return [...state.lots].sort(SORTS.numero)[0] || SAMPLE_LOT; }
+  function renderEtiquettes() {
+    const tpls = [...(state.modeles || [])].sort((a, b) => String(a.nom).localeCompare(b.nom, "fr"));
+    const def = (state.modele && state.modele.tplId) || "";
+    const card = (id, name, fmtLabel, actions) => `<article class="tplcard"><div class="thumb"><canvas data-thumb="${esc(id)}" aria-label="Aperçu du modèle ${esc(name)}"></canvas></div>
+      <div class="tpl-info"><b>${esc(name)}</b>${(id === "auto" ? !def : def === id) ? ` <span class="pill ex">Par défaut</span>` : ""}<span class="hint">${esc(fmtLabel)}</span></div>${actions}</article>`;
+    const tplCards = [card("auto", "Modèle automatique", fmtById((state.modele || {}).format).t, `<span class="hint">Mise en page calculée à partir des informations du lot.</span>`)]
+      .concat(tpls.map(t => card(t.id, t.nom || "Sans nom", fmtById(t.format).t, canWrite ? `<div class="actions"><button class="btn small" data-act="tpl-edit" data-tpl="${esc(t.id)}">Modifier</button></div>` : ""))).join("");
+    const lots = state.lots.filter(l => (state.year === "all" || String(l.annee) === String(state.year)) && matches(l, ["numero", "nom", "provenance", "notes"])).sort(SORTS[state.sort] || SORTS.numero);
+    const lotRows = lots.map(l => { const p = potsOf(l); const parts = TAILLES.filter(t => p[t.v].n > 0).map(t => `${p[t.v].n} ${(p[t.v].n > 1 ? t.pl : t.t).toLowerCase()}`).join(" · ");
+      return `<div class="lotrow" data-lot="${esc(l.id)}"><div><b>${esc(lotTitle(l))}</b><span class="hint">${esc(moisAnnee(l))}${l.provenance ? " · " + esc(l.provenance) : ""}${parts ? " · " + parts : ""}</span></div>
+        <button class="btn small primary" data-act="labels">Créer les étiquettes</button></div>`; }).join("");
+    return `<div class="etq">
+      <section class="etq-sec"><div class="sec-head"><h2>Modèles d'étiquettes</h2>${canWrite && assets ? `<button class="btn small" data-act="tpl-new">+ Importer un modèle</button>` : ""}</div>
+        <div class="tplgrid">${tplCards}</div>
+        ${!assets && canWrite ? `<span class="hint">L'import de modèles n'est pas disponible dans cet affichage.</span>` : ""}</section>
+      <section class="etq-sec"><div class="sec-head"><h2>Imprimer des étiquettes</h2><span class="hint">Choisissez un lot : le modèle, la planche et le nombre d'étiquettes se règlent ensuite.</span></div>
+        ${!state.ready.l ? `<div class="empty"><p>Chargement des lots…</p></div>` : (lots.length ? `<div class="lotlist">${lotRows}</div>` : `<div class="empty"><p>${state.lots.length ? "Aucun lot ne correspond à cette recherche." : "Ajoutez d'abord un lot dans le Cellier."}</p></div>`)}</section>
+    </div>`;
+  }
+  function drawThumbs() {
+    document.querySelectorAll("canvas[data-thumb]").forEach(cv => {
+      const id = cv.dataset.thumb, tpl = id === "auto" ? null : (state.modeles || []).find(t => t.id === id);
+      if (id !== "auto" && !tpl) return;
+      const f = fmtById(tpl ? tpl.format : (state.modele || {}).format);
+      const cssW = Math.max(120, Math.min(260, (cv.parentElement.clientWidth || 240) - 16)), k = cssW / f.w, cssH = f.h * k, dpr = window.devicePixelRatio || 1;
+      cv.style.width = cssW + "px"; cv.style.height = cssH + "px"; cv.width = Math.round(cssW * dpr); cv.height = Math.round(cssH * dpr);
+      cv.classList.toggle("round", !!f.round);
+      const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, cssW, cssH);
+      const lot = sampleLot(), rec = lot.recetteId && state.recettes.find(r => r.id === lot.recetteId);
+      if (tpl) {
+        const entry = tpl.assetId ? getImg(tpl.assetId) : null;
+        if (entry && !entry.ready && !entry.error) entry.wait.add(drawThumbs);
+        drawCustomLabel(canvasPainter(ctx, k), 0, 0, f, lot, rec, tpl, entry);
+      } else drawLabel(canvasPainter(ctx, k), 0, 0, f, lot, rec, { ...MODELE_DEF, ...state.modele });
+    });
+  }
+
   let qt; $("#q").addEventListener("input", (e) => { clearTimeout(qt); qt = setTimeout(() => { state.q = e.target.value.trim(); render(); }, 120); });
 
   // ---------- Données ----------
@@ -1291,8 +1613,9 @@ label.btn { display: inline-flex; align-items: center; cursor: pointer; }
       if (flashId) { const id = flashId; flashId = null; if (state.view === "carnet") goToRecipe(id); }
     }, onErr);
     try { assets = await window.claude.use("assets"); } catch (e) { assets = null; }
-    db.collection("modeles").onSnapshot((snap) => { state.modeles = snap.docs.map(d => ({ id: d.id, ...d.data() })); }, () => {});
-    db.doc("reglages/etiquettes").onSnapshot((s) => { state.modele = s.exists ? { ...MODELE_DEF, ...s.data() } : { ...MODELE_DEF }; }, () => {});
+    db.collection("modeles").onSnapshot((snap) => { state.modeles = snap.docs.map(d => ({ id: d.id, ...d.data() })); if (state.view === "etiquettes") render(); }, () => {});
+    db.doc("reglages/etiquettes").onSnapshot((s) => { state.modele = s.exists ? { ...MODELE_DEF, ...s.data() } : { ...MODELE_DEF }; if (state.view === "etiquettes") render(); }, () => {});
+    loadLabelFonts().then(() => { if (state.view === "etiquettes") drawThumbs(); });
     db.collection("lots").onSnapshot((snap) => {
       state.lots = snap.docs.map(d => ({ id: d.id, ...d.data() })); state.ready.l = true; render();
     }, onErr);

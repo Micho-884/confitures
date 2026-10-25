@@ -1,5 +1,5 @@
 // Garde l'application et ses bibliothèques en mémoire pour l'utiliser hors connexion.
-const CACHE = "cellier-v1";
+const CACHE = "cellier-v2";
 const CORE = ["./", "./index.html", "./local-shim.js", "./manifest.webmanifest", "./apple-touch-icon.png", "./icon-192.png", "./icon-512.png"];
 const CDN = [
   "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js",
@@ -20,8 +20,12 @@ self.addEventListener("fetch", (e) => {
   const own = url.origin === self.location.origin;
   // Pages et fichiers de l'application : réseau d'abord (pour recevoir les mises à jour), mémoire sinon.
   if (own) {
-    e.respondWith(fetch(req).then((r) => { if (r.ok) { const cp = r.clone(); caches.open(CACHE).then((c) => c.put(req, cp)); } return r; })
-      .catch(() => caches.match(req, { ignoreSearch: true }).then((m) => m || caches.match("./index.html"))));
+    const fromCache = () => caches.match(req, { ignoreSearch: true }).then((m) => m || (req.mode === "navigate" ? caches.match("./index.html") : undefined));
+    e.respondWith(fetch(req).then((r) => {
+      if (r.ok) { const cp = r.clone(); caches.open(CACHE).then((c) => c.put(req, cp)); return r; }
+      // Site introuvable (404…) : on ouvre la version gardée en mémoire si elle existe.
+      return fromCache().then((m) => m || r);
+    }).catch(() => fromCache().then((m) => m || Response.error())));
     return;
   }
   // Bibliothèques et polices : mémoire d'abord.
