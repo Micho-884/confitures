@@ -29,6 +29,8 @@
   --apricot: #d9822b;
   --apricot-soft: #fbead6;
   --mure: #3b2a5c;
+  --cellar-a: #ece3db; --cellar-b: #e2d6cc; --cellar-line: #d6c8bc;
+  --wood-l: #c39467; --wood: #9a6b43; --wood-d: #6e4a2c; --chalk: #2f2a27; --chalk-ink: #f4ede6; --chalk-sub: #cbbfb4;
   --ok: #3f7a4a;
   --warn: #b5651d;
   --danger: #a3262f;
@@ -42,6 +44,7 @@
     --bg: #1b1418; --paper: #251c21; --ink: #f2e8ed; --muted: #b29fa9; --line: #3d2f36;
     --accent: #e07aa6; --accent-ink: #1b1418; --accent-soft: #3a2230;
     --apricot: #f0a65c; --apricot-soft: #3b2a1b; --mure: #a897d8;
+    --cellar-a: #2c231f; --cellar-b: #241c19; --cellar-line: #3d302a; --chalk: #171210;
     --ok: #7fc28a; --warn: #f0a65c; --danger: #f07a82;
     color-scheme: dark;
   }
@@ -50,6 +53,7 @@
   --bg: #1b1418; --paper: #251c21; --ink: #f2e8ed; --muted: #b29fa9; --line: #3d2f36;
   --accent: #e07aa6; --accent-ink: #1b1418; --accent-soft: #3a2230;
   --apricot: #f0a65c; --apricot-soft: #3b2a1b; --mure: #a897d8;
+  --cellar-a: #2c231f; --cellar-b: #241c19; --cellar-line: #3d302a; --chalk: #171210;
   --ok: #7fc28a; --warn: #f0a65c; --danger: #f07a82;
   color-scheme: dark;
 }
@@ -205,6 +209,56 @@ button { cursor: pointer; }
 .chev { color: var(--muted); }
 .det-info { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
 .det-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Cellier : vues étagères */
+.viewbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.viewbar .lab { color: var(--muted); font-size: 14px; }
+.seg { display: inline-flex; background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 3px; gap: 2px; flex-wrap: wrap; }
+.seg button { border: 0; background: transparent; border-radius: 999px; padding: 6px 14px; color: var(--muted); font-weight: 500; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.cellar { background: linear-gradient(180deg, var(--cellar-a), var(--cellar-b)); border: 1px solid var(--cellar-line); border-radius: 14px; padding: 8px 22px 22px; min-width: 0; }
+.cellar .shelf { display: grid; grid-template-columns: 160px minmax(0, 1fr); align-items: end; gap: 8px 18px; padding-top: 18px; }
+.cellar .plank { grid-column: 1 / -1; height: 14px; border-radius: 3px; background: linear-gradient(180deg, var(--wood-l), var(--wood) 45%, var(--wood-d)); box-shadow: 0 6px 8px -4px rgba(60, 35, 15, .45); }
+.cellar .tag { align-self: center; background: var(--chalk); color: var(--chalk-ink); border-radius: 6px; padding: 9px 12px; box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .08); }
+.cellar .tag b { display: block; font-family: var(--f-display); font-weight: 400; font-size: 19px; }
+.cellar .tag span { font-family: var(--f-mono); font-size: 11px; color: var(--chalk-sub); }
+.cellar .jars { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 6px; min-height: 70px; }
+.cellar .gwrap { display: grid; justify-items: center; padding: 4px 4px 2px; border-radius: 8px; }
+.cellar .gwrap:hover { background: rgba(255, 255, 255, .35); }
+.cellar .group { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 3px; max-width: 100%; }
+.cellar .gl { font-family: var(--f-mono); font-size: 11px; color: var(--muted); margin-top: 3px; text-align: center; }
+.cellar .more { align-self: center; font-family: var(--f-mono); font-size: 12px; color: var(--muted); padding: 0 4px; }
+.shelf-empty { color: var(--muted); font-size: 13px; align-self: center; }
+.shelf-legend { margin-top: 10px; }
+.cellar .jars.big { gap: 14px 18px; }
+.lotjars { display: flex; align-items: flex-end; gap: 2px; flex-wrap: wrap; }
+.bigjar { position: relative; border: 0; background: none; padding: 2px; border-radius: 12px; cursor: pointer; }
+.bigjar:hover { background: rgba(255, 255, 255, .35); }
+.bigjar.sel { box-shadow: 0 0 0 3px var(--accent); background: rgba(255, 255, 255, .4); }
+.bigjar svg { display: block; }
+.ribbon { position: absolute; z-index: 1; top: 18%; right: -8px; background: var(--apricot); color: #fff; font-size: 10px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; padding: 1px 6px; border-radius: 3px; transform: rotate(8deg); }
+.v5 { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 18px; align-items: start; }
+.v5pop { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 10px; box-shadow: 0 16px 36px -20px rgba(42, 26, 36, .5); }
+.v5top { display: flex; justify-content: space-between; align-items: center; }
+.v5pop .kicker { font-family: var(--f-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+.v5pop h3 { font-size: 22px; }
+.v5pop .meta { color: var(--muted); font-size: 14px; }
+.v5pop .meta b { color: var(--ink); }
+.v5tab { width: 100%; border-collapse: collapse; font-size: 14px; }
+.v5tab th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 600; padding: 4px; border-bottom: 1px solid var(--line); }
+.v5tab td { padding: 6px 4px; border-bottom: 1px solid var(--line); }
+.v5tab .num { text-align: right; font-family: var(--f-mono); }
+.v5tab .stp { text-align: right; }
+.v5tab .stepper { display: inline-flex; gap: 6px; }
+.v5tab .stepper button { width: 30px; height: 30px; font-size: 16px; border-radius: 50%; border: 1px solid var(--line); background: var(--bg); }
+@media (max-width: 900px) { .v5 { grid-template-columns: minmax(0, 1fr); } .v5pop { position: static; } }
+@media (max-width: 600px) {
+  .cellar { padding: 4px 12px 16px; }
+  .cellar .shelf { grid-template-columns: minmax(0, 1fr); }
+  .cellar .tag { justify-self: start; }
+  .bigjar svg { width: 62px; height: auto; }
+  .ribbon { font-size: 8px; top: 12%; right: -4px; padding: 0 4px; }
+}
+.ribbon { white-space: nowrap; }
 /* Onglet Étiquettes */
 .etq { display: grid; gap: 28px; }
 .etq-sec { display: grid; gap: 14px; }
@@ -424,7 +478,7 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
 <script>
 (() => {
   const THIS_YEAR = new Date().getFullYear();
-  const state = { view: "dashboard", year: "all", taille: "all", lieu: "all", sort: "numero", q: "", recettes: [], lots: [], ready: { r: false, l: false } };
+  const state = { view: "dashboard", year: "all", taille: "all", lieu: "all", cview: "liste", selLot: null, sort: "numero", q: "", recettes: [], lots: [], ready: { r: false, l: false } };
   const TAILLES = [
     { v: "petit", t: "Petit", pl: "Petits", g: 250 },
     { v: "standard", t: "Standard", pl: "Standards", g: 370 },
@@ -610,8 +664,11 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
         <select id="sortSel">${[["numero", "N° de lot"], ["alpha", "Ordre alphabétique"], ["restants", "Pots restants"]].map(([v, t]) => `<option value="${v}" ${state.sort === v ? "selected" : ""}>${t}</option>`).join("")}</select>
       </label>
     </div>`;
-    if (!lots.length) return sizes + `<div class="empty"><p>Aucun lot ne correspond à cette recherche.</p></div>`;
-    return sizes + `<div class="grid">${lots.map(lotCard).join("")}</div>`;
+    const seg = `<div class="viewbar"><span class="lab">Affichage</span><div class="seg" role="group" aria-label="Affichage du cellier">${[["liste", "Liste"], ["etageres", "Étagères par taille"], ["rayonnage", "Rayonnage"]].map(([v, t]) => `<button type="button" data-cview="${v}" aria-pressed="${state.cview === v}">${t}</button>`).join("")}</div></div>`;
+    if (!lots.length) return seg + sizes + `<div class="empty"><p>Aucun lot ne correspond à cette recherche.</p></div>`;
+    if (state.cview === "etageres") return seg + sizes + renderEtageres(lots, rOf);
+    if (state.cview === "rayonnage") return seg + sizes + renderRayonnage(lots, rOf);
+    return seg + sizes + `<div class="grid">${lots.map(lotCard).join("")}</div>`;
   }
 
   function recipeCard(r) {
@@ -909,6 +966,8 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
   document.addEventListener("click", async (ev) => {
     const tab = ev.target.closest(".tab");
     if (tab) { state.view = tab.dataset.view; state.year = "all"; try { localStorage.setItem("cellier.view", state.view); } catch (e) {} render(); return; }
+    const cvb = ev.target.closest("[data-cview]");
+    if (cvb) { state.cview = cvb.dataset.cview; try { localStorage.setItem("cellier.cview", state.cview); } catch (e) {} render(); return; }
     const chip = ev.target.closest(".chip");
     if (chip && chip.dataset.taille) { state.taille = chip.dataset.taille; render(); return; }
     if (chip && chip.dataset.year) { state.year = chip.dataset.year; render(); return; }
@@ -917,6 +976,12 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
     const b = ev.target.closest("[data-act]"); if (!b) return;
     const act = b.dataset.act;
     if (act === "dd") return drill(b.dataset.kind, b.dataset.key);
+    if (act === "sel-lot") {
+      state.selLot = b.dataset.lot; render();
+      const pop = document.getElementById("v5pop");
+      if (pop && window.innerWidth < 900) pop.scrollIntoView({ block: "nearest", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      return;
+    }
     if (act === "goto-cellier") {
       dlg.close(); state.view = "cellier"; state.taille = "all";
       state.lieu = b.dataset.lieu || "all"; state.year = b.dataset.year || "all"; state.q = b.dataset.q || ""; $("#q").value = state.q;
@@ -1667,6 +1732,7 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
     render();
   });
   try { const s = localStorage.getItem("cellier.sort"); if (s && SORTS[s]) state.sort = s; } catch (e) {}
+  try { const c = localStorage.getItem("cellier.cview"); if (["liste", "etageres", "rayonnage"].includes(c)) state.cview = c; } catch (e) {}
   $("#importInput").addEventListener("change", (ev) => {
     const fl = ev.target.files && ev.target.files[0]; ev.target.value = "";
     if (!fl) return;
@@ -1890,6 +1956,104 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
   document.addEventListener("keydown", (ev) => {
     if ((ev.key === "Enter" || ev.key === " ") && ev.target.matches && ev.target.matches('[data-act="dd"]')) { ev.preventDefault(); ev.target.click(); }
   });
+
+  // ---------- Cellier : vues « étagères » ----------
+  // Couleur de la confiture, devinée à partir du parfum.
+  const FRUIT_COLORS = [
+    ["abricot", "Abricot", "#e58a2b"], ["fraise", "Fraise", "#c8243b"], ["mirabelle", "Mirabelle", "#e8b739"], ["cerise", "Cerise", "#5b1027"],
+    ["framboise", "Framboise", "#b0123f"], ["coing", "Coing", "#c98a2e"], ["myrtille", "Myrtille", "#3b2a5c"], ["orange", "Orange", "#ef7d1a"],
+    ["figue", "Figue", "#6e3b4e"], ["quetsche", "Quetsche", "#4a2245"], ["prune", "Prune", "#4a2245"], ["peche", "Pêche", "#f0a05a"],
+    ["poire", "Poire", "#c9b458"], ["pomme", "Pomme", "#c6a14a"], ["rhubarbe", "Rhubarbe", "#d4566b"], ["mure", "Mûre", "#2e1a33"],
+    ["cassis", "Cassis", "#2a1030"], ["groseille", "Groseille", "#d0213d"], ["citron", "Citron", "#e9c93f"], ["kiwi", "Kiwi", "#7a9a2e"],
+    ["ananas", "Ananas", "#e7c24a"], ["mangue", "Mangue", "#f2a43a"], ["tomate", "Tomate", "#c0392b"], ["melon", "Melon", "#f0a45d"],
+    ["sureau", "Sureau", "#3d2340"], ["airelle", "Airelle", "#9e1b32"], ["chataigne", "Châtaigne", "#7a4b2e"], ["marron", "Marron", "#7a4b2e"],
+    ["lait", "Confiture de lait", "#c48a52"], ["gingembre", "Gingembre", "#c99a4b"], ["myrte", "Myrtille", "#3b2a5c"],
+  ];
+  const SPARE = ["#a3426b", "#c46a2a", "#6b3f7a", "#8a5a2b", "#b23a48", "#5f6f2e"];
+  function fruitOf(nom) {
+    const n = norm(nom), hit = FRUIT_COLORS.find(([k]) => n.includes(k));
+    if (hit) return { key: hit[0], label: hit[1], c: hit[2] };
+    const first = String(nom || "Autre").trim().split(/[\s-]+/)[0] || "Autre";
+    let h = 0; for (const ch of norm(first)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return { key: norm(first), label: first.charAt(0).toUpperCase() + first.slice(1), c: SPARE[h % SPARE.length] };
+  }
+  const shortName = (s, n) => (String(s).length > n ? String(s).slice(0, n - 1) + "…" : String(s));
+  const JAR = { petit: { w: 34, h: 44 }, standard: { w: 42, h: 60 }, grand: { w: 52, h: 80 } };
+  function jarSvg(l, size) {
+    const { w, h } = JAR[size], c = fruitOf(l.nom).c, lid = Math.round(h * 0.16), W = w + 6, H = h + 8, y0 = 2 + lid, bh = h - lid;
+    return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <rect x="${3 + w * 0.1}" y="2" width="${w * 0.8}" height="${lid}" rx="2" fill="#b8925a"/><rect x="${3 + w * 0.1}" y="${y0 - 3}" width="${w * 0.8}" height="3" fill="#8d6c3d"/>
+      <rect x="3" y="${y0}" width="${w}" height="${bh}" rx="${w * 0.18}" fill="#f6efe9" stroke="rgba(80,50,30,.35)"/>
+      <rect x="5" y="${y0 + bh * 0.14}" width="${w - 4}" height="${bh * 0.84}" rx="${w * 0.15}" fill="${c}"/>
+      <rect x="${3 + w * 0.14}" y="${y0 + bh * 0.38}" width="${w * 0.72}" height="${bh * 0.3}" rx="2" fill="#fbf4ea"/>
+      <text x="${W / 2}" y="${y0 + bh * 0.6}" text-anchor="middle" font-size="${Math.max(9, w * 0.26)}" font-weight="700" fill="#3a2a33">${esc(l.numero || "")}</text>
+      <rect x="${3 + w * 0.12}" y="${y0 + 4}" width="${w * 0.08}" height="${bh * 0.62}" rx="2" fill="rgba(255,255,255,.45)"/></svg>`;
+  }
+  const BIG = { petit: { w: 66, h: 88 }, standard: { w: 78, h: 110 }, grand: { w: 94, h: 140 } };
+  function bigJarSvg(l, size) {
+    const { w, h } = BIG[size], c = fruitOf(l.nom).c, lid = h * 0.13, W = w + 8, H = h + 6, y0 = 2 + lid, bh = h - lid;
+    const mois = l.date ? fmtDate(l.date).split(" ") : [], when = mois.length ? `${mois[0].slice(0, 4)} ${mois[1] || ""}` : String(l.annee || "");
+    return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">
+      <rect x="${4 + w * 0.08}" y="2" width="${w * 0.84}" height="${lid}" rx="3" fill="#b8925a"/>
+      <rect x="4" y="${y0}" width="${w}" height="${bh}" rx="${w * 0.16}" fill="#f6efe9" stroke="rgba(80,50,30,.35)"/>
+      <rect x="6" y="${y0 + bh * 0.1}" width="${w - 4}" height="${bh * 0.88}" rx="${w * 0.14}" fill="${c}"/>
+      <rect x="${4 + w * 0.08}" y="${y0 + bh * 0.3}" width="${w * 0.84}" height="${bh * 0.46}" rx="3" fill="#fbf4ea"/>
+      <text x="${4 + w / 2}" y="${y0 + bh * 0.45}" text-anchor="middle" font-size="${w * 0.2}" font-weight="700" fill="#3a2a33">${esc(l.numero || "")}</text>
+      <text x="${4 + w / 2}" y="${y0 + bh * 0.59}" text-anchor="middle" font-size="${Math.max(8, w * 0.115)}" fill="#3a2a33">${esc(shortName(l.nom || "", 13))}</text>
+      <text x="${4 + w / 2}" y="${y0 + bh * 0.71}" text-anchor="middle" font-size="${Math.max(7, w * 0.1)}" fill="#76626d">${esc(when)}</text></svg>`;
+  }
+  function fruitLegend(lots) {
+    const seen = new Map(); lots.forEach(l => { const f = fruitOf(l.nom); if (!seen.has(f.key)) seen.set(f.key, f); });
+    return `<div class="legend shelf-legend">${[...seen.values()].sort((a, b) => natCmp(a.label, b.label)).map(f => `<span><i style="background:${f.c};border-radius:50%"></i>${esc(f.label)}</span>`).join("")}<span>Chiffre sur le pot = n° de lot</span></div>`;
+  }
+
+  // Vue « Étagères par taille » : petits en haut, grands en bas.
+  function renderEtageres(lots, rOf) {
+    const shelves = TAILLES.map(t => {
+      const ls = lots.filter(l => rOf(l, t.v) > 0), tot = ls.reduce((a, l) => a + rOf(l, t.v), 0);
+      const groups = ls.map(l => { const r = rOf(l, t.v), shown = Math.min(r, 24);
+        return `<div class="gwrap clickable" ${dd("lot", l.id, "Détail du lot " + lotTitle(l))}><div class="group">${Array.from({ length: shown }, () => jarSvg(l, t.v)).join("")}${r > shown ? `<span class="more">+${r - shown}</span>` : ""}</div>
+          <div class="gl">${esc(shortName(lotTitle(l), 24))}${totRestants(l) > 0 && totRestants(l) <= 2 ? ' <span class="pill low">Bientôt fini</span>' : ""}</div></div>`; }).join("");
+      return `<div class="shelf"><div class="tag"><b>${t.pl}</b><span>≈ ${t.g} g · ${tot} pot${tot > 1 ? "s" : ""}</span></div>
+        <div class="jars">${groups || `<span class="shelf-empty">Aucun pot ${t.t.toLowerCase()} ici</span>`}</div><div class="plank"></div></div>`;
+    }).join("");
+    return `<div class="cellar">${shelves}</div>${fruitLegend(lots)}<p class="hint">Touchez un lot pour voir son détail.</p>`;
+  }
+
+  // Vue « Rayonnage étiqueté » : une étagère par fruit, fiche du pot touché à côté.
+  function renderRayonnage(lots, rOf) {
+    const withPots = lots.filter(l => TAILLES.some(t => rOf(l, t.v) > 0));
+    if (!withPots.length) return `<div class="empty"><p>Aucun pot en réserve pour cette sélection.</p></div>`;
+    const fams = new Map();
+    withPots.forEach(l => { const f = fruitOf(l.nom); if (!fams.has(f.key)) fams.set(f.key, { f, lots: [] }); fams.get(f.key).lots.push(l); });
+    if (!withPots.some(l => l.id === state.selLot)) state.selLot = withPots[0].id;
+    const shelves = [...fams.values()].sort((a, b) => natCmp(a.f.label, b.f.label)).map(({ f, lots: ls }) => {
+      const tot = ls.reduce((a, l) => a + TAILLES.reduce((s, t) => s + rOf(l, t.v), 0), 0);
+      const jars = ls.map(l => {
+        const low = totRestants(l) > 0 && totRestants(l) <= 2, items = [];
+        TAILLES.forEach(t => { const r = rOf(l, t.v); for (let i = 0; i < Math.min(r, 4); i++) items.push(t.v); });
+        const extra = TAILLES.reduce((a, t) => a + rOf(l, t.v), 0) - items.length;
+        return `<div class="lotjars">${items.map((sz, i) => `<button type="button" class="bigjar${l.id === state.selLot ? " sel" : ""}" data-act="sel-lot" data-lot="${esc(l.id)}" aria-label="${esc(lotTitle(l))}, pot ${tailleLabel(sz).toLowerCase()}">
+          ${low && i === 0 ? `<span class="ribbon">Bientôt fini</span>` : ""}${bigJarSvg(l, sz)}</button>`).join("")}${extra > 0 ? `<span class="more">+${extra}</span>` : ""}</div>`;
+      }).join("");
+      return `<div class="shelf"><div class="tag"><b>${esc(f.label)}</b><span>${tot} pot${tot > 1 ? "s" : ""} · ${ls.length} lot${ls.length > 1 ? "s" : ""}</span></div><div class="jars big">${jars}</div><div class="plank"></div></div>`;
+    }).join("");
+    const l = withPots.find(x => x.id === state.selLot), P = potsOf(l), L = lieuxOf(l), rec = l.recetteId && state.recettes.find(r => r.id === l.recetteId);
+    const r = TAILLES.reduce((a, t) => a + P[t.v].r, 0), n = TAILLES.reduce((a, t) => a + P[t.v].n, 0);
+    const lines = L.flatMap((x, i) => TAILLES.filter(t => x.pots[t.v] > 0 || (L.length === 1 && P[t.v].n > 0)).map(t => `<tr><td>${esc(x.nom || "Lieu non indiqué")}</td><td>${t.t}</td><td class="num">${x.pots[t.v]}</td>
+      <td class="stp"><span class="stepper"><button type="button" data-act="minus" data-size="${t.v}" data-lieu="${i}" aria-label="Retirer un pot ${t.t.toLowerCase()}" ${x.pots[t.v] === 0 || !canWrite ? "disabled" : ""}>−</button><button type="button" data-act="plus" data-size="${t.v}" data-lieu="${i}" aria-label="Ajouter un pot ${t.t.toLowerCase()}" ${!canWrite ? "disabled" : ""}>+</button></span></td></tr>`)).join("");
+    const panel = `<aside class="v5pop" id="v5pop" data-lot="${esc(l.id)}" aria-live="polite">
+      <div class="v5top"><span class="kicker">Pot sélectionné</span><span class="vintage">${esc(l.annee || "—")}</span></div>
+      <h3>${esc(lotTitle(l))}</h3>
+      <div class="meta">${[l.date ? esc(fmtDate(l.date)) : "", l.provenance ? "Fruits de " + esc(l.provenance) : "", rec ? `Recette ${esc(rec.annee)}${rec.note ? " " + stars(rec.note) : ""}` : ""].filter(Boolean).join(" · ")}</div>
+      <table class="v5tab"><thead><tr><th>Lieu</th><th>Taille</th><th class="num">Pots</th><th></th></tr></thead><tbody>${lines}</tbody></table>
+      <div class="meta">Total : <b>${r}</b> / ${n} pots remplis</div>
+      <div class="actions">${r > 0 && canWrite ? `<button type="button" class="btn small primary" data-act="move-lot">Déplacer des pots</button>` : ""}
+        <button type="button" class="btn small" data-act="labels">Étiquettes</button>
+        ${canWrite ? `<button type="button" class="btn small" data-act="edit-lot">Modifier</button>` : ""}</div>
+    </aside>`;
+    return `<div class="v5"><div><div class="cellar">${shelves}</div>${fruitLegend(withPots)}</div>${panel}</div>`;
+  }
 
   // ---------- Onglet Étiquettes ----------
   const SAMPLE_LOT = { numero: 1, nom: "Abricot-lavande", annee: THIS_YEAR, date: `${THIS_YEAR}-07`, provenance: "PARIS", pots: { standard: { n: 6, r: 6 } } };
