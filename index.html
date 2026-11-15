@@ -290,6 +290,8 @@ button { cursor: pointer; }
   .lg-head .lg-n { grid-column: 3; grid-row: 1; align-self: start; }
   .lg-head .lg-n b { font-size: 18px; }
   .lg-title b { font-size: 18px; }
+  .lg-bar .seg { flex-wrap: nowrap; }
+  .lg-bar .seg button { padding: 5px 10px; font-size: 13px; white-space: nowrap; }
   .lg-head .lg-n small { display: block; font-size: 11px; }
   .lg-table .c-year, .lg-table .c-size { display: none; }
   .lg-m { display: block; font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 2.4em; }
@@ -1017,6 +1019,7 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
       const V = state.lotsView, val = b.dataset.val;
       if (b.dataset.op === "mode") V.mode = val;
       if (b.dataset.op === "year") V.year = val;
+      if (b.dataset.op === "sort") { V.sort = val; try { localStorage.setItem("cellier.lotsSort", val); } catch (e) {} }
       if (b.dataset.op === "toggle") { if (V.open.has(val)) V.open.delete(val); else V.open.add(val); }
       return drillLots(true);
     }
@@ -2101,7 +2104,8 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
   }
 
   // ---------- Lots en cours : regroupement par dizaine ----------
-  state.lotsView = { mode: "dizaine", year: "all", open: new Set() };
+  state.lotsView = { mode: "dizaine", year: "all", sort: "numero", open: new Set() };
+  try { const v = localStorage.getItem("cellier.lotsSort"); if (["numero", "restants", "parfum"].includes(v)) state.lotsView.sort = v; } catch (e) {}
   const firstWord = (nom) => { const w = String(nom || "").trim().split(/[\s-]+/)[0] || ""; return w ? w.charAt(0).toUpperCase() + w.slice(1) : "Sans nom"; };
   const lotFilled = (l) => TAILLES.reduce((s, t) => s + potsOf(l)[t.v].n, 0);
   function lotStatePill(l) { const r = totRestants(l); return r === 0 && lotFilled(l) > 0 ? '<span class="pill out">Épuisé</span>' : (r > 0 && r <= 2 ? '<span class="pill low">Bientôt fini</span>' : ""); }
@@ -2117,11 +2121,14 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
     const V = state.lotsView;
     const years = [...new Set(state.lots.map(l => num(l.annee) || 0))].filter(Boolean).sort((a, b) => b - a);
     if (V.year !== "all" && !years.includes(num(V.year))) V.year = "all";
-    const ls = [...state.lots].filter(l => V.year === "all" || num(l.annee) === num(V.year)).sort(SORTS.numero);
+    const LOT_SORT = { numero: SORTS.numero, restants: SORTS.restants, parfum: (a, b) => natCmp(a.nom, b.nom) || SORTS.numero(a, b) };
+    const ls = [...state.lots].filter(l => V.year === "all" || num(l.annee) === num(V.year)).sort(LOT_SORT[V.sort] || SORTS.numero);
     const enCours = ls.filter(l => totRestants(l) > 0).length;
     const controls = `<div class="lg-bar">
       <span class="lab">Affichage</span>
       <div class="seg" role="group" aria-label="Affichage des lots">${[["dizaine", "Par dizaine"], ["tous", "Tous les lots"]].map(([v, t]) => `<button type="button" data-act="lots-ui" data-op="mode" data-val="${v}" aria-pressed="${V.mode === v}">${t}</button>`).join("")}</div>
+      <span class="lab">Trier par</span>
+      <div class="seg" role="group" aria-label="Trier les lots">${[["numero", "N° de lot"], ["restants", "Pots restants"], ["parfum", "Parfum"]].map(([v, t]) => `<button type="button" data-act="lots-ui" data-op="sort" data-val="${v}" aria-pressed="${V.sort === v}">${t}</button>`).join("")}</div>
       ${years.length > 1 ? `<span class="lab">Année</span><div class="chips">${[["all", "Toutes"], ...years.map(y => [String(y), String(y)])].map(([v, t]) => `<button type="button" class="chip" data-act="lots-ui" data-op="year" data-val="${v}" aria-pressed="${String(V.year) === v}">${t}</button>`).join("")}</div>` : ""}
     </div>`;
     const lotRow = (l) => `<tr ${dd("lot", l.id, "Voir le lot " + lotTitle(l))} class="clickable">
@@ -2136,7 +2143,11 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
     } else {
       const groups = new Map();
       ls.forEach(l => { const n = Math.round(num(l.numero)); const k = n > 0 ? Math.floor(n / 10) : -1; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(l); });
-      body = `<div class="lg-groups">${[...groups].sort((a, b) => (a[0] < 0) - (b[0] < 0) || a[0] - b[0]).map(([k, gl]) => {
+      const gR = (gl) => gl.reduce((a, l) => a + totRestants(l), 0), gF = (gl) => firstWord(gl[0].nom);
+      const grpCmp = V.sort === "restants" ? (a, b) => gR(b[1]) - gR(a[1]) || a[0] - b[0]
+        : V.sort === "parfum" ? (a, b) => natCmp(gF(a[1]), gF(b[1])) || a[0] - b[0]
+        : (a, b) => a[0] - b[0];
+      body = `<div class="lg-groups">${[...groups].sort((a, b) => (a[0] < 0) - (b[0] < 0) || grpCmp(a, b)).map(([k, gl]) => {
         const fams = [...new Map(gl.map(l => [norm(firstWord(l.nom)), firstWord(l.nom)])).values()];
         const range = k < 0 ? "Lots sans numéro" : (k === 0 ? "Lots 1 à 9" : `Lots ${k * 10} à ${k * 10 + 9}`);
         const title = `${range} - ${fams.join(", ")}`;
