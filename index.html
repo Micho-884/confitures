@@ -259,6 +259,42 @@ button { cursor: pointer; }
   .ribbon { font-size: 8px; top: 12%; right: -4px; padding: 0 4px; }
 }
 .ribbon { white-space: nowrap; }
+/* Lots en cours par dizaine */
+.pill { white-space: nowrap; }
+.lg-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.lg-bar .lab { color: var(--muted); font-size: 13px; }
+.lg-bar .chip { cursor: pointer; }
+.lg-bar .chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.lg-groups { display: grid; gap: 10px; }
+.lg-grp { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--paper); }
+.lg-head { width: 100%; border: 0; background: var(--paper); color: var(--ink); text-align: left; cursor: pointer; display: grid; grid-template-columns: 22px minmax(0, 1.3fr) minmax(0, 1fr) auto; gap: 8px 14px; align-items: center; padding: 12px 14px; font: inherit; }
+.lg-head:hover { background: var(--bg); }
+.lg-grp.open .lg-head { background: var(--accent-soft); }
+.lg-chev { color: var(--accent); font-size: 16px; text-align: center; }
+.lg-title { display: grid; min-width: 0; }
+.lg-title b { font-family: var(--f-display); font-weight: 400; font-size: 20px; overflow-wrap: anywhere; }
+.lg-title > span { color: var(--muted); font-size: 13px; }
+.lg-track { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: var(--line); min-width: 60px; }
+.lg-track i { display: block; height: 100%; }
+.lg-n { font-family: var(--f-mono); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.lg-n b { font-size: 20px; font-weight: 500; }
+.lg-n small { color: var(--muted); }
+.lg-table { border-top: 1px solid var(--line); }
+.lg-num { display: inline-block; min-width: 2.2em; font-family: var(--f-mono); font-weight: 700; color: var(--accent); }
+.lg-sz { display: inline-flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--muted); }
+.lg-sz i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; }
+.lg-m { display: none; }
+@media (max-width: 600px) {
+  .lg-head { grid-template-columns: 18px minmax(0, 1fr) auto; }
+  .lg-head .lg-track { grid-column: 2 / -1; grid-row: 2; }
+  .lg-head .lg-n { grid-column: 3; grid-row: 1; align-self: start; }
+  .lg-head .lg-n b { font-size: 18px; }
+  .lg-title b { font-size: 18px; }
+  .lg-head .lg-n small { display: block; font-size: 11px; }
+  .lg-table .c-year, .lg-table .c-size { display: none; }
+  .lg-m { display: block; font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 2.4em; }
+  .det-table.lg-table th, .det-table.lg-table td { white-space: normal; }
+}
 /* Onglet Étiquettes */
 .etq { display: grid; gap: 28px; }
 .etq-sec { display: grid; gap: 14px; }
@@ -730,6 +766,7 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
       : v === "cellier" ? renderCellier()
       : `<div style="display:grid;gap:32px">${renderCarnet()}</div>`;
     if (v === "etiquettes") drawThumbs();
+    restoreAnchor();
   }
 
   // ---------- Formulaires ----------
@@ -976,6 +1013,13 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
     const b = ev.target.closest("[data-act]"); if (!b) return;
     const act = b.dataset.act;
     if (act === "dd") return drill(b.dataset.kind, b.dataset.key);
+    if (act === "lots-ui") {
+      const V = state.lotsView, val = b.dataset.val;
+      if (b.dataset.op === "mode") V.mode = val;
+      if (b.dataset.op === "year") V.year = val;
+      if (b.dataset.op === "toggle") { if (V.open.has(val)) V.open.delete(val); else V.open.add(val); }
+      return drillLots(true);
+    }
     if (act === "sel-lot") {
       state.selLot = b.dataset.lot; render();
       const pop = document.getElementById("v5pop");
@@ -1010,6 +1054,7 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
     if (act === "lot-from" && rec) return lotForm({}, { nom: rec.nom, annee: num(rec.annee) || THIS_YEAR, recetteId: rec.id, nbPots: num(rec.rendement) || 6, provenance: "" });
     if ((act === "see-recipe" || act === "goto")) { if (dlg.open) dlg.close(); goToRecipe(b.dataset.id); return; }
     if ((act === "minus" || act === "plus") && lot && db) {
+      rememberAnchor(b);
       const size = TAILLES.some(t => t.v === b.dataset.size) ? b.dataset.size : "standard";
       const L = lieuxOf(lot), li = Math.min(L.length - 1, Math.max(0, Math.round(num(b.dataset.lieu))));
       L[li].pots[size] = Math.max(0, L[li].pots[size] + (act === "plus" ? 1 : -1));
@@ -1878,14 +1923,16 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
   const byLieu = (x) => ({ k: x.lk, label: x.lieu, kind: "lieu" });
   const byLot = (x) => ({ k: x.l.id, label: lotTitle(x.l) + (x.l.annee ? ` (${x.l.annee})` : ""), kind: "lot" });
   const lotSort = (a, b) => natCmp(a.label, b.label);
-  function openDetail(title, sub, html) {
+  function openDetail(title, sub, html, opts = {}) {
+    const keepTop = opts.keep && dlg.open ? dlg.scrollTop : null;
     frm.oninput = null; frm.onchange = null; onSave = async () => "";
     dlg.classList.add("big");
     frm.innerHTML = `<h2>${esc(title)}</h2>${sub ? `<p class="det-sub">${sub}</p>` : ""}<div class="detail">${html}</div>
       <div class="form-actions"><div class="right"><button type="button" class="btn primary" id="dclose">Fermer</button></div></div>`;
     gf("dclose").onclick = () => dlg.close();
     if (!dlg.open) { if (typeof dlg.showModal === "function") dlg.showModal(); else dlg.setAttribute("open", ""); }
-    frm.scrollTop = 0;
+    if (keepTop !== null) { dlg.scrollTop = keepTop; return; }
+    frm.scrollTop = 0; dlg.scrollTop = 0;
     gf("dclose").focus();
   }
   const gotoBtn = (label, attrs) => `<button type="button" class="btn small" data-act="goto-cellier" ${attrs}>${esc(label)}</button>`;
@@ -1947,9 +1994,7 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
       if (key === "annees") { const ys = [...new Set(state.lots.map(l => num(l.annee) || 0))].sort((a, b) => b - a);
         return openDetail("Millésimes", "Touchez une année pour voir ses lots", `<section class="det-sec"><div class="det-table-wrap"><table class="det-table"><thead><tr><th scope="col">Année</th><th scope="col" class="num">Lots</th><th scope="col" class="num">Restants / remplis</th></tr></thead><tbody>${ys.map(y => { const ls = state.lots.filter(l => (num(l.annee) || 0) === y); const r = ls.reduce((a, l) => a + totRestants(l), 0), n = ls.reduce((a, l) => a + TAILLES.reduce((s, t) => s + potsOf(l)[t.v].n, 0), 0);
           return `<tr ${dd("annee", y, "Voir " + (y || "sans année"))} class="clickable"><th scope="row">${y || "Sans année"} <span class="chev" aria-hidden="true">›</span></th><td class="num">${ls.length}</td><td class="num"><b>${r}</b> / ${n}</td></tr>`; }).join("")}</tbody></table></div></section>`); }
-      if (key === "lots") { const ls = [...state.lots].sort(SORTS.numero);
-        return openDetail("Lots", `${plural(ls.filter(l => totRestants(l) > 0).length, "lot")} en cours sur ${ls.length}`, `<section class="det-sec"><div class="det-table-wrap"><table class="det-table"><thead><tr><th scope="col">Lot</th><th scope="col">Année</th><th scope="col">État</th><th scope="col" class="num">Restants / remplis</th></tr></thead><tbody>${ls.map(l => { const r = totRestants(l), n = TAILLES.reduce((s, t) => s + potsOf(l)[t.v].n, 0);
-          return `<tr ${dd("lot", l.id, "Voir le lot " + lotTitle(l))} class="clickable"><th scope="row">${esc(lotTitle(l))} <span class="chev" aria-hidden="true">›</span></th><td>${esc(l.annee || "")}</td><td>${r === 0 ? '<span class="pill out">Épuisé</span>' : r <= 2 ? '<span class="pill low">Bientôt fini</span>' : ""}</td><td class="num"><b>${r}</b> / ${n}</td></tr>`; }).join("")}</tbody></table></div></section>`); }
+      if (key === "lots") return drillLots();
     }
   }
   // Clavier : Entrée ou Espace sur un élément cliquable du tableau de bord.
@@ -2053,6 +2098,84 @@ input, select, textarea { font-size: 16px; } /* évite le zoom automatique de Sa
         ${canWrite ? `<button type="button" class="btn small" data-act="edit-lot">Modifier</button>` : ""}</div>
     </aside>`;
     return `<div class="v5"><div><div class="cellar">${shelves}</div>${fruitLegend(withPots)}</div>${panel}</div>`;
+  }
+
+  // ---------- Lots en cours : regroupement par dizaine ----------
+  state.lotsView = { mode: "dizaine", year: "all", open: new Set() };
+  const firstWord = (nom) => { const w = String(nom || "").trim().split(/[\s-]+/)[0] || ""; return w ? w.charAt(0).toUpperCase() + w.slice(1) : "Sans nom"; };
+  const lotFilled = (l) => TAILLES.reduce((s, t) => s + potsOf(l)[t.v].n, 0);
+  function lotStatePill(l) { const r = totRestants(l); return r === 0 && lotFilled(l) > 0 ? '<span class="pill out">Épuisé</span>' : (r > 0 && r <= 2 ? '<span class="pill low">Bientôt fini</span>' : ""); }
+  function sizeTrack(ls) {
+    const N = ls.reduce((a, l) => a + lotFilled(l), 0) || 1;
+    return `<div class="lg-track" aria-hidden="true">${TAILLES.map(t => { const v = ls.reduce((a, l) => a + potsOf(l)[t.v].r, 0); return v ? `<i style="width:${(v / N * 100).toFixed(1)}%;background:${SIZE_COLOR[t.v]}"></i>` : ""; }).join("")}</div>`;
+  }
+  function sizeText(l) {
+    const P = potsOf(l);
+    return TAILLES.filter(t => P[t.v].n > 0).map(t => `<span><i style="background:${SIZE_COLOR[t.v]}"></i>${P[t.v].r}/${P[t.v].n} ${(P[t.v].n > 1 ? t.pl : t.t).toLowerCase()}</span>`).join("");
+  }
+  function drillLots(keep) {
+    const V = state.lotsView;
+    const years = [...new Set(state.lots.map(l => num(l.annee) || 0))].filter(Boolean).sort((a, b) => b - a);
+    if (V.year !== "all" && !years.includes(num(V.year))) V.year = "all";
+    const ls = [...state.lots].filter(l => V.year === "all" || num(l.annee) === num(V.year)).sort(SORTS.numero);
+    const enCours = ls.filter(l => totRestants(l) > 0).length;
+    const controls = `<div class="lg-bar">
+      <span class="lab">Affichage</span>
+      <div class="seg" role="group" aria-label="Affichage des lots">${[["dizaine", "Par dizaine"], ["tous", "Tous les lots"]].map(([v, t]) => `<button type="button" data-act="lots-ui" data-op="mode" data-val="${v}" aria-pressed="${V.mode === v}">${t}</button>`).join("")}</div>
+      ${years.length > 1 ? `<span class="lab">Année</span><div class="chips">${[["all", "Toutes"], ...years.map(y => [String(y), String(y)])].map(([v, t]) => `<button type="button" class="chip" data-act="lots-ui" data-op="year" data-val="${v}" aria-pressed="${String(V.year) === v}">${t}</button>`).join("")}</div>` : ""}
+    </div>`;
+    const lotRow = (l) => `<tr ${dd("lot", l.id, "Voir le lot " + lotTitle(l))} class="clickable">
+        <th scope="row"><span class="lg-num">${esc(l.numero || "—")}</span> ${esc(l.nom || "Sans nom")} ${lotStatePill(l)}<span class="lg-m">${esc(moisAnnee(l))}</span></th>
+        <td class="c-year">${esc(l.annee || "")}${l.date ? " · " + esc(fmtDate(l.date)) : ""}</td>
+        <td class="c-size"><span class="lg-sz">${sizeText(l)}</span></td>
+        <td class="num"><b>${totRestants(l)}</b> / ${lotFilled(l)} <span class="chev" aria-hidden="true">›</span></td></tr>`;
+    const head = `<thead><tr><th scope="col">Lot</th><th scope="col" class="c-year">Année · mise en pot</th><th scope="col" class="c-size">Tailles (restants / remplis)</th><th scope="col" class="num">Total</th></tr></thead>`;
+    let body;
+    if (V.mode === "tous") {
+      body = `<div class="det-table-wrap"><table class="det-table lg-table">${head}<tbody>${ls.map(lotRow).join("")}</tbody></table></div>`;
+    } else {
+      const groups = new Map();
+      ls.forEach(l => { const n = Math.round(num(l.numero)); const k = n > 0 ? Math.floor(n / 10) : -1; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(l); });
+      body = `<div class="lg-groups">${[...groups].sort((a, b) => (a[0] < 0) - (b[0] < 0) || a[0] - b[0]).map(([k, gl]) => {
+        const fams = [...new Map(gl.map(l => [norm(firstWord(l.nom)), firstWord(l.nom)])).values()];
+        const range = k < 0 ? "Lots sans numéro" : (k === 0 ? "Lots 1 à 9" : `Lots ${k * 10} à ${k * 10 + 9}`);
+        const title = `${range} - ${fams.join(", ")}`;
+        const gid = `${V.year}:${k}`, open = V.open.has(gid);
+        const R = gl.reduce((a, l) => a + totRestants(l), 0), N = gl.reduce((a, l) => a + lotFilled(l), 0);
+        const low = gl.filter(l => { const r = totRestants(l); return r > 0 && r <= 2; }).length, out = gl.filter(l => totRestants(l) === 0 && lotFilled(l) > 0).length;
+        return `<div class="lg-grp${open ? " open" : ""}">
+          <button type="button" class="lg-head" data-act="lots-ui" data-op="toggle" data-val="${esc(gid)}" aria-expanded="${open}">
+            <span class="lg-chev" aria-hidden="true">${open ? "▾" : "▸"}</span>
+            <span class="lg-title"><b>${esc(title)}</b><span>${gl.length} lot${gl.length > 1 ? "s" : ""} · n° ${gl.map(l => esc(l.numero || "—")).join(", ")}${low ? ` <span class="pill low">${low} bientôt fini${low > 1 ? "s" : ""}</span>` : ""}${out ? ` <span class="pill out">${out} épuisé${out > 1 ? "s" : ""}</span>` : ""}</span></span>
+            ${sizeTrack(gl)}
+            <span class="lg-n"><b>${R}</b> <small>/ ${N} pots</small></span>
+          </button>
+          ${open ? `<table class="det-table lg-table">${head}<tbody>${gl.map(lotRow).join("")}</tbody>
+            <tfoot><tr><th scope="row">Total ${esc(range.toLowerCase())}</th><td class="c-year"></td><td class="c-size"></td><td class="num"><b>${R}</b> / ${N}</td></tr></tfoot></table>` : ""}
+        </div>`;
+      }).join("")}</div>`;
+    }
+    openDetail("Lots", `${enCours} lot${enCours > 1 ? "s" : ""} en cours sur ${ls.length}${V.mode === "dizaine" ? " · regroupés par dizaine de numéros" : ""}`,
+      controls + (ls.length ? body : `<p class="det-sub">Aucun lot pour cette année.</p>`) + `<p class="det-sub">Touchez une dizaine pour voir ses lots · touchez un lot pour ouvrir sa fiche.</p>`, { keep });
+  }
+
+  // ---------- Garder le lot à l'écran après − / + ----------
+  let anchor = null;
+  function rememberAnchor(el) {
+    const pop = el.closest("#v5pop"), card = el.closest("[data-lot]");
+    const ref = pop || card; if (!ref) return;
+    anchor = { sel: pop ? "#v5pop" : `.label[data-lot="${CSS.escape(card.dataset.lot)}"], [data-lot="${CSS.escape(card.dataset.lot)}"]`,
+      top: ref.getBoundingClientRect().top, until: Date.now() + 4000,
+      act: el.dataset.act, size: el.dataset.size || "", lieu: el.dataset.lieu || "" };
+  }
+  function restoreAnchor() {
+    if (!anchor) return;
+    if (Date.now() > anchor.until) { anchor = null; return; }
+    const ref = document.querySelector(anchor.sel); if (!ref) return;
+    const d = ref.getBoundingClientRect().top - anchor.top;
+    if (Math.abs(d) > 1) window.scrollBy(0, d);
+    const btn = ref.querySelector(`[data-act="${anchor.act}"][data-size="${anchor.size}"]${anchor.lieu ? `[data-lieu="${anchor.lieu}"]` : ""}`);
+    if (btn && !btn.disabled && matchMedia("(pointer: fine)").matches) btn.focus({ preventScroll: true });
   }
 
   // ---------- Onglet Étiquettes ----------
